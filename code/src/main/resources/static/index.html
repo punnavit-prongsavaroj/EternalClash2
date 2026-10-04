@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EternalClash2</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- หน้าแรก: ตั้งชื่อ -->
+    <div id="login-screen" class="screen">
+        <video autoplay muted loop playsinline id="bg-video">
+            <source src="/gif/1004.mp4" type="video/mp4">
+            เบราว์เซอร์ของคุณไม่รองรับวิดีโอนี้
+        </video>
+        
+        <h1 class="game-title">EternalClash2</h1>
+        
+        <div class="login-container">
+            <p>กรุณาตั้งชื่อขุนพลของคุณ</p>
+            <input type="text" id="player-name-input" placeholder="ใส่ชื่อของคุณที่นี่..." autocomplete="off">
+            <button onclick="joinLobby()">เข้าสู่สนามรบ</button>
+        </div>
+    </div>
+
+    <!-- หน้าสร้างห้อง (Lobby) -->
+    <div id="lobby-screen" class="screen" style="display: none;">
+        <!-- พื้นหลังดึงจากโฟลเดอร์ Map -->
+        <div class="lobby-bg"></div>
+        
+        <!-- ตัวละครซ้ายขวา -->
+        <div class="lobby-character-container">
+            <div class="half-screen left-half">
+                <img src="/gif/jocho.png" class="character-img" alt="Jocho">
+            </div>
+            <div class="half-screen right-half">
+                <img src="/gif/kongming.png" class="character-img" alt="Kongming">
+            </div>
+        </div>
+        
+        <!-- ปุ่มออกจากระบบ (ขวาบน) -->
+        <button class="logout-btn" onclick="logout()">ออกจากระบบ</button>
+
+        <!-- ชื่อผู้เล่น (ซ้ายบน) -->
+        <div class="player-name-display">
+            ท่านขุนพล: <span id="display-name" class="highlight"></span>
+        </div>
+
+        <!-- ปุ่มสร้างห้อง และ เข้าร่วมห้อง (ซ้ายล่าง - ขวาล่าง) -->
+        <div class="bottom-actions">
+            <button class="action-btn create-btn" onclick="createRoom()">สร้างห้อง</button>
+            <button class="action-btn join-btn" onclick="showJoinPopup()">เข้าร่วมห้อง</button>
+        </div>
+
+        <!-- Popup กรอกรหัสห้อง -->
+        <div id="join-popup" class="popup-overlay" style="display: none;">
+            <div class="popup-box glass-panel">
+                <h2 style="color: #f39c12; margin-bottom: 20px;">เข้าร่วมห้อง</h2>
+                <input type="text" id="room-code-input" placeholder="กรอกรหัสห้อง..." autocomplete="off">
+                <div class="popup-buttons">
+                    <button class="action-btn join-btn" onclick="joinRoom()">ยืนยัน</button>
+                    <button class="action-btn cancel-btn" onclick="closeJoinPopup()">ยกเลิก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
