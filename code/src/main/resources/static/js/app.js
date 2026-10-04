@@ -47,3 +47,27 @@ function showLobby(playerName) {
     
     document.getElementById("display-name").innerText = playerName;
 }
+
+// ระบบ Popup
+function showJoinPopup() {
+    document.getElementById('join-popup').style.display = 'flex';
+}
+
+function closeJoinPopup() {
+    document.getElementById('join-popup').style.display = 'none';
+    document.getElementById('room-code-input').value = '';
+}
+
+function createRoom() {
+    alert('ระบบสร้างห้องกำลังอยู่ระหว่างการพัฒนา!');
+}
+
+function joinRoom() {
+    const code = document.getElementById('room-code-input').value;
+    if(!code) {
+        alert('กรุณากรอกรหัสห้อง');
+        return;
+    }
+    alert('ระบบเข้าร่วมห้องกำลังอยู่ระหว่างการพัฒนา! รหัส: ' + code);
+    closeJoinPopup();
+}
