@@ -1,5 +1,10 @@
 package com.eternalclash2.command;
 
-public interface PlayerActionCommand{
-    public void execute()
+import com.eternalclash2.domain.entity.Army;
+import com.eternalclash2.domain.enums.ActionType;
+
+public interface PlayerActionCommand {
+    void execute();
+    ActionType getRecordedAction();
+    Army getArmy();
 }
