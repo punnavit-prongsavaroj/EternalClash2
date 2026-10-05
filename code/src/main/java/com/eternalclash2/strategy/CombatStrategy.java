@@ -1,9 +1,7 @@
 package com.eternalclash2.strategy;
-
-import com.eternalclash2.domain.entity.Army;
-
+import com.eternalclash2.domain.entity.Player;
 
 public interface CombatStrategy {
-
-    public int calculateCasualties(Army attacker, Army defender);
+    int calculateKills(Player player, int soldiers);
+    boolean canSurviveDestruction();
 }

@@ -15,6 +15,7 @@ import com.eternalclash2.repository.BattleRepository;
 import com.eternalclash2.repository.CityRepository;
 import com.eternalclash2.repository.GameRepository;
 import com.eternalclash2.repository.PlayerRepository;
+import com.eternalclash2.strategy.CombatContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -125,7 +126,7 @@ public class BattleService {
         }
 
         if (defendersBefore == 0 || defenderLosses >= defendersBefore) {
-            boolean survived = hasSpecial(defender, "SURVIVE_DESTRUCTION") && ThreadLocalRandom.current().nextInt(100) < 50;
+            boolean survived = new CombatContext(defender).executeSurvival();
             if (!survived) eliminatePlayer(defender, turnNumber);
             for (Battle battle : battleRepository.findByGame_IdAndTurnNumberAndDefenderPlayer_IdAndBattleType(
                     gameId, turnNumber, targetId, BattleType.CITY_SIEGE)) {
@@ -151,13 +152,7 @@ public class BattleService {
     }
 
     private int kills(Player player, int soldiers) {
-        double ratio = player.getMarshal() == null || player.getMarshal().getAttackKillRatio() == null
-                ? 1.0 : player.getMarshal().getAttackKillRatio();
-        return Math.max(0, (int) Math.floor(soldiers * ratio));
-    }
-
-    private boolean hasSpecial(Player player, String type) {
-        return player.getMarshal() != null && type.equals(player.getMarshal().getSpecialAbilityType());
+        return new CombatContext(player).executeKills(player, soldiers);
     }
 
     @Transactional(readOnly = true)

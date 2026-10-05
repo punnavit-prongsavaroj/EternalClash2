@@ -1,5 +1,6 @@
 package com.eternalclash2.service;
 
+import com.eternalclash2.command.*;
 import com.eternalclash2.domain.entity.Army;
 import com.eternalclash2.domain.entity.City;
 import com.eternalclash2.domain.entity.Game;
@@ -18,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
@@ -38,8 +38,12 @@ public class TurnActionService {
         Player player = playerRepository.findById(playerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Player not found with id: " + playerId));
         if (!player.getGame().getId().equals(gameId)) throw new BusinessLogicException("Player does not belong to this game");
-        if (game.getStatus() != GameStatus.IN_PROGRESS) throw new BusinessLogicException("Game is not in progress");
+        
+        // --- ใช้ State Pattern เช็คสถานะเกม ---
+        new com.eternalclash2.state.GameStateContext(game.getStatus()).getCurrentState().validateActionSubmission();
+
         if (!Boolean.TRUE.equals(player.getIsAlive())) throw new BusinessLogicException("Eliminated players cannot take actions");
+        
         int turn = game.getCurrentTurnNumber();
         if (turnActionRepository.existsByGame_IdAndTurnNumberAndPlayer_Id(gameId, turn, playerId)) {
             throw new BusinessLogicException("Player has already submitted an action for this turn");
@@ -50,26 +54,21 @@ public class TurnActionService {
                 .orElseThrow(() -> new ResourceNotFoundException("City not found for player: " + playerId));
         int foodBefore = city.getFood();
         int soldiersBefore = city.getSoldiers();
-        ActionType recordedAction = requestedAction;
-        Army army = null;
 
-        switch (requestedAction) {
-            case PRODUCE_FOOD -> cityService.produceFood(playerId, turn);
-            case RECRUIT_SOLDIERS -> cityService.recruitSoldiers(playerId, turn);
-            case SEND_ARMY -> {
-                if (targetPlayerId == null || soldierCount == null) throw new BusinessLogicException("Target and soldier count are required to send an army");
-                if (hasSpecial(player, "SURVIVE_DESTRUCTION") && ThreadLocalRandom.current().nextInt(100) < 20) {
-                    recordedAction = ActionType.NONE;
-                } else {
-                    army = armyService.sendArmy(playerId, targetPlayerId, soldierCount, turn);
-                }
-            }
-            case NONE -> { }
-        }
+        PlayerActionCommand command = switch (requestedAction) {
+            case PRODUCE_FOOD -> new ProduceFoodCommand(cityService, playerId, turn);
+            case RECRUIT_SOLDIERS -> new RecruitSoldiersCommand(cityService, playerId, turn);
+            case SEND_ARMY -> new SendArmyCommand(armyService, player, targetPlayerId, soldierCount, turn);
+            case NONE -> new NoneCommand();
+        };
+
+        command.execute();
+
         City after = cityRepository.findByPlayer_Id(playerId)
                 .orElseThrow(() -> new ResourceNotFoundException("City not found for player: " + playerId));
+                
         return turnActionRepository.save(TurnAction.builder().game(game).turnNumber(turn).player(player)
-                .actionType(recordedAction).army(army).foodBefore(foodBefore).foodAfter(after.getFood())
+                .actionType(command.getRecordedAction()).army(command.getArmy()).foodBefore(foodBefore).foodAfter(after.getFood())
                 .soldiersBefore(soldiersBefore).soldiersAfter(after.getSoldiers()).build());
     }
 
@@ -84,9 +83,5 @@ public class TurnActionService {
     @Transactional(readOnly = true)
     public TurnAction findById(Long id) {
         return turnActionRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("TurnAction not found with id: " + id));
-    }
-
-    private boolean hasSpecial(Player player, String type) {
-        return player.getMarshal() != null && type.equals(player.getMarshal().getSpecialAbilityType());
     }
 }
