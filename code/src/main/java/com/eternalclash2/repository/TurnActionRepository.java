@@ -6,6 +6,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TurnActionRepository extends JpaRepository<TurnAction, Long> {
+    boolean existsByGame_IdAndTurnNumberAndPlayer_Id(Long gameId, Integer turnNumber, Long playerId);
+    java.util.List<TurnAction> findByGame_IdAndTurnNumber(Long gameId, Integer turnNumber);
 }
 
 

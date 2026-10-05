@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CityRepository extends JpaRepository<City, Long> {
+    java.util.Optional<City> findByPlayer_Id(Long playerId);
 }
 
 

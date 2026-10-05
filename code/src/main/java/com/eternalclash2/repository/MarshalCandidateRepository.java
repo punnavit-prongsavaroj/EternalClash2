@@ -6,6 +6,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MarshalCandidateRepository extends JpaRepository<MarshalCandidate, Long> {
+    java.util.List<MarshalCandidate> findByPlayer_IdOrderBySlotNumber(Long playerId);
+    void deleteByPlayer_Id(Long playerId);
 }
 
 
