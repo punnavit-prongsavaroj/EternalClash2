@@ -34,7 +34,7 @@ public class Marshal {
     @Column(name = "soldier_production", nullable = false)
     private Integer soldierProduction = 20;
 
-    @Column(name = "attack_kill_ratio", nullable = false, precision = 3, scale = 2)
+    @Column(name = "attack_kill_ratio", nullable = false)
     private Double attackKillRatio = 1.00;
 
     @Column(name = "reveals_attack_target", nullable = false)
