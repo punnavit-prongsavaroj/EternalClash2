@@ -49,9 +49,12 @@ public class GameViewService {
                     own && city != null ? city.getSoldiers() : null);
         }).toList();
 
-        List<ActionSnapshot> actions = GameClock.isDaytime(turn)
-                ? turnActionRepository.findByGame_IdAndTurnNumber(gameId, turn).stream()
-                    .map(action -> actionSnapshot(action, viewerPlayerId, turn)).toList()
+        // ดึง Action ของเทิร์นที่แล้วมาแสดง (ถ้าเทิร์นก่อนหน้าเป็นกลางวัน หรือเป็น Action ของตัวเอง)
+        int prevTurn = turn - 1;
+        List<ActionSnapshot> actions = prevTurn > 0
+                ? turnActionRepository.findByGame_IdAndTurnNumber(gameId, prevTurn).stream()
+                    .filter(action -> GameClock.isDaytime(prevTurn) || action.getPlayer().getId().equals(viewerPlayerId))
+                    .map(action -> actionSnapshot(action, viewerPlayerId, prevTurn)).toList()
                 : List.of();
 
         List<ArmySnapshot> armies = armyRepository.findByTarget_Game_IdAndStatus(gameId, ArmyStatus.TRAVELING).stream()

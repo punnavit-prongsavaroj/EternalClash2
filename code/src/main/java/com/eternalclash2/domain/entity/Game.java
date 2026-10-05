@@ -23,6 +23,9 @@ public class Game {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "room_code", unique = true, length = 10)
+    private String roomCode;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private GameStatus status = GameStatus.WAITING;

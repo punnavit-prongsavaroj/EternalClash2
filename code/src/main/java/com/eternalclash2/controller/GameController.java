@@ -38,6 +38,11 @@ public class GameController {
         return ResponseEntity.ok(GameDto.from(gameService.findById(gameId)));
     }
 
+    @GetMapping("/code/{roomCode}")
+    public ResponseEntity<GameDto> getGameByCode(@PathVariable String roomCode) {
+        return ResponseEntity.ok(GameDto.from(gameService.findByRoomCode(roomCode)));
+    }
+
     @PostMapping("/{gameId}/players")
     public ResponseEntity<PlayerDto> addPlayer(@PathVariable Long gameId,
                                                @Valid @RequestBody AddPlayerRequest request) {
