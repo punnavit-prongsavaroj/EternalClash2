@@ -1,5 +1,21 @@
 const API_BASE_URL = '/api';
 
+const EVENT_THAI_NAMES = {
+    'SINKHOLE': 'หลุมยุบ',
+    'SUN_GLARE': 'แสงแดดแสบตา',
+    'LIGHTNING': 'พายุฟ้าผ่า',
+    'AVALANCHE': 'หิมะถล่ม',
+    'FOOD_SPOILAGE': 'อาหารเน่าเสีย',
+    'INSECT_DAMAGE': 'แมลงศัตรูพืชบุก',
+    'FROSTBITE': 'อากาศหนาวจัด (Frostbite)',
+    'EPIDEMIC': 'โรคระบาด',
+    'SLOW': 'ติดพายุ (เดินทางล่าช้า)',
+    'FLOOD': 'น้ำท่วมใหญ่',
+    'SUNBURN': 'แดดเผา',
+    'SNOW_COVER': 'พายุหิมะปกคลุม',
+    'REBELLION': 'กบฏชาวบ้านลุกฮือ'
+};
+
 const MARSHAL_IMGS = {
     'ขงเบ้ง': 'kong-beng.jpg',
     'จูล่ง': 'Ju-long.jpg',
@@ -419,7 +435,23 @@ async function updateLog(snapshot) {
             if (resE.ok) {
                 const events = await resE.json();
                 events.forEach(ev => {
-                    extraLines += "<span style='color:#9b59b6'>⚡ อีเวนต์: " + (ev.description || "เกิดเหตุการณ์ลึกลับ") + "</span><br>";
+                    let evName = EVENT_THAI_NAMES[ev.eventType] || ev.eventType;
+                    let targetName = "";
+                    if (ev.affectedPlayerId) {
+                        const p = snapshot.players.find(p => p.playerId === ev.affectedPlayerId);
+                        targetName = p ? "เมืองของ " + p.name : "เมืองปริศนา";
+                    } else if (ev.affectedArmyId) {
+                        targetName = "กองทัพที่กำลังเดินทาง";
+                    }
+                    
+                    let impactStr = [];
+                    if (ev.foodImpact && ev.foodImpact !== 0) impactStr.push("เสบียง " + ev.foodImpact);
+                    if (ev.soldierImpact && ev.soldierImpact !== 0) impactStr.push("ทหาร " + ev.soldierImpact);
+                    if (ev.extraTravelTurns && ev.extraTravelTurns !== 0) impactStr.push("ดีเลย์ " + ev.extraTravelTurns + " เทิร์น");
+                    
+                    let detail = impactStr.length > 0 ? " (ผลกระทบ: " + impactStr.join(", ") + ")" : "";
+                    
+                    extraLines += "<span style='color:#9b59b6'>⚡ <b>อีเวนต์: [" + evName + "]</b> เกิดขึ้นที่ " + targetName + detail + "</span><br>";
                 });
             }
             const resB = await fetch(API_BASE_URL + '/games/' + gameId + '/battles?turnNumber=' + prevTurn);
