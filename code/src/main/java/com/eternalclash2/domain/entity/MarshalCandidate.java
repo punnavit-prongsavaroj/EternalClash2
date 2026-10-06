@@ -31,6 +31,7 @@ public class MarshalCandidate {
     private Integer slotNumber;
 
     @Column(name = "is_selected", nullable = false)
+    @Builder.Default
     private Boolean isSelected = false;
 }
 

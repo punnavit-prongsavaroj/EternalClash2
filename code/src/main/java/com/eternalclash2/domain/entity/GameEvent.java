@@ -42,12 +42,15 @@ public class GameEvent {
     private LocationType locationType;
 
     @Column(name = "food_impact", nullable = false)
+    @Builder.Default
     private Integer foodImpact = 0;
 
     @Column(name = "soldier_impact", nullable = false)
+    @Builder.Default
     private Integer soldierImpact = 0;
 
     @Column(name = "extra_travel_turns", nullable = false)
+    @Builder.Default
     private Integer extraTravelTurns = 0;
 
     @Column(columnDefinition = "TEXT")

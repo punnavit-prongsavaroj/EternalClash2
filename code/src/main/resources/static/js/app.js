@@ -194,6 +194,9 @@ function handleSnapshot(snapshot) {
             lastStatus = 'FINISHED';
             hideAllScreens();
             document.getElementById('game-over-screen').style.display = 'flex';
+            
+            // ปิดเพลงหรือเปลี่ยนเพลงตอนจบ (ถ้าต้องการ)
+            // document.getElementById('bg-music').pause();
             if(pollingInterval) clearInterval(pollingInterval);
             
             const winner = snapshot.players.find(p => p.alive);
@@ -509,4 +512,27 @@ function returnToLobby() {
     localStorage.removeItem("eternalClashPlayerId");
     if(pollingInterval) clearInterval(pollingInterval);
     checkLoginState();
+}
+
+
+// --- ระบบเพลง BGM ---
+let isMusicPlaying = false;
+function toggleMusic() {
+    const bgMusic = document.getElementById('bg-music');
+    const toggleBtn = document.getElementById('music-toggle');
+    if (isMusicPlaying) {
+        bgMusic.pause();
+        toggleBtn.innerText = '🔇';
+        isMusicPlaying = false;
+    } else {
+        let playPromise = bgMusic.play();
+        if (playPromise !== undefined) {
+            playPromise.then(_ => {
+                toggleBtn.innerText = '🔊';
+                isMusicPlaying = true;
+            }).catch(error => {
+                console.warn("เบราว์เซอร์บล็อกการเล่นเพลงอัตโนมัติ");
+            });
+        }
+    }
 }

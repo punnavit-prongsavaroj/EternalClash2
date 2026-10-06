@@ -29,15 +29,19 @@ public class Marshal {
     private String disadvantageDescription;
 
     @Column(name = "food_production", nullable = false)
+    @Builder.Default
     private Integer foodProduction = 20;
 
     @Column(name = "soldier_production", nullable = false)
+    @Builder.Default
     private Integer soldierProduction = 20;
 
     @Column(name = "attack_kill_ratio", nullable = false)
+    @Builder.Default
     private Double attackKillRatio = 1.00;
 
     @Column(name = "reveals_attack_target", nullable = false)
+    @Builder.Default
     private Boolean revealsAttackTarget = false;
 
     @Column(name = "special_ability_type", length = 30)
