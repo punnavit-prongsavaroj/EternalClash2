@@ -10,10 +10,20 @@
 
     <!-- ระบบ BGM -->
     <audio id="bg-music" loop>
+    <audio id="click-sfx"><source src="/sound/click.mp3" type="audio/mpeg"></audio>
+    <audio id="farm-sfx"><source src="/sound/farm.mp3" type="audio/mpeg"></audio>
+    <audio id="recruit-sfx"><source src="/sound/recruit.mp3" type="audio/mpeg"></audio>
+    <audio id="attack-sfx"><source src="/sound/attack.mp3" type="audio/mpeg"></audio>
+    <audio id="event-sfx"><source src="/sound/event.mp3" type="audio/mpeg"></audio>
+    <audio id="battle-sfx"><source src="/sound/battle.mp3" type="audio/mpeg"></audio>
+    <audio id="farm-sfx"><source src="/sound/farm.mp3" type="audio/mpeg"></audio>
+    <audio id="recruit-sfx"><source src="/sound/recruit.mp3" type="audio/mpeg"></audio>
+    <audio id="attack-sfx"><source src="/sound/attack.mp3" type="audio/mpeg"></audio>
+
         <source src="/sound/menu_bgm.mp3" type="audio/mpeg">
     </audio>
     <button id="music-toggle" onclick="toggleMusic()" style="position: fixed; top: 20px; right: 20px; z-index: 1000; background: rgba(0,0,0,0.7); color: white; border: 2px solid #f39c12; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-size: 1.5rem; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
-        🔇
+        🔊
     </button>
 
     <!-- หน้าแรก: ตั้งชื่อ -->
@@ -161,19 +171,19 @@
     </div>
     <script src="js/app.js"></script>
 
-    <div id="game-over-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.95); z-index: 100;">
-        <h1 style="color: #f1c40f; font-size: 5rem; text-shadow: 0 0 30px #f39c12; margin-bottom: 20px;">จบสงคราม!</h1>
-        <h2 style="color: white; font-size: 2.5rem; margin-bottom: 10px;">ผู้ชนะรอดชีวิต: <span id="winner-name-display" style="color: #2ecc71;">-</span></h2>
-        <div style="position: relative; width: 250px; height: 350px; border: 3px solid #f39c12; border-radius: 12px; overflow: hidden; margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
-            <img id="winner-marshal-img" src="" style="width: 100%; height: 100%; object-fit: cover; object-position: top; display: none;">
-            <div style="position: absolute; bottom: 0; width: 100%; padding: 10px; background: rgba(0,0,0,0.8); text-align: center; box-sizing: border-box;">
-                <h3 style="color: #bdc3c7; font-size: 1.3rem; margin: 0;">ขุนพล: <span id="winner-marshal-display" style="color: #f39c12;">-</span></h3>
+    <div id="game-over-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black; z-index: 100;">
+        <!-- วิดีโอพื้นหลังที่เล่นครั้งเดียวและค้างที่เฟรมสุดท้าย -->
+        <video id="win-video" style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1;"></video>
+        
+        <!-- UI ที่จะถูกซ่อนไว้ก่อนจนกว่าวิดีโอจะเล่นจบ -->
+        <div id="win-ui" style="display: none; position: relative; z-index: 2; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.4);">
+            <h1 style="color: #f1c40f; font-size: 5rem; text-shadow: 0 0 30px #f39c12; margin-bottom: 20px;">จบสงคราม!</h1>
+            <h2 style="color: white; font-size: 2.5rem; margin-bottom: 10px;">ผู้ชนะรอดชีวิต: <span id="winner-name-display" style="color: #2ecc71;">-</span></h2>
+            <h3 style="color: #f39c12; font-size: 2rem; margin-bottom: 40px; text-shadow: 0 2px 10px rgba(0,0,0,0.8);">ขุนพลคู่กาย: <span id="winner-marshal-display" style="color: white;">-</span></h3>
+            <div style="display: flex; gap: 20px;">
+                <button class="action-btn recruit-btn" style="font-size: 1.2rem; padding: 15px 30px;" onclick="returnToLobby()">🏠 กลับล็อบบี้ (หาห้องใหม่)</button>
+                <button class="action-btn produce-btn" style="font-size: 1.2rem; padding: 15px 30px;" onclick="logout()">🚪 กลับหน้าเมนูหลัก</button>
             </div>
-        </div>
-        <div style="margin-bottom: 40px;"></div>
-        <div style="display: flex; gap: 20px;">
-            <button class="action-btn recruit-btn" style="font-size: 1.2rem; padding: 15px 30px;" onclick="returnToLobby()">🏠 กลับล็อบบี้ (หาห้องใหม่)</button>
-            <button class="action-btn produce-btn" style="font-size: 1.2rem; padding: 15px 30px;" onclick="logout()">🚪 กลับหน้าเมนูหลัก</button>
         </div>
     </div>
 </body>

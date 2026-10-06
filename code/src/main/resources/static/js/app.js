@@ -16,6 +16,17 @@ const EVENT_THAI_NAMES = {
     'REBELLION': 'กบฏชาวบ้านลุกฮือ'
 };
 
+
+const MARSHAL_WIN_VIDEOS = {
+    'ขงเบ้ง': 'kongming.mp4',
+    'จูล่ง': 'jurong.mp4',
+    'จิวยี่': 'jilyi.mp4',
+    'โจโฉ': 'josho.mp4',
+    'เล่าปี่': 'laopi.mp4',
+    'ลิโป้': 'Lubu.mp4',
+    'ซุนกวน': 'songun.mp4'
+};
+
 const MARSHAL_IMGS = {
     'ขงเบ้ง': 'kong-beng.jpg',
     'จูล่ง': 'Ju-long.jpg',
@@ -28,6 +39,8 @@ const MARSHAL_IMGS = {
 
 let pollingInterval = null;
 let lastTurn = -1;
+let lastSeason = null;
+let lastDaytime = null;
 let lastStatus = '';
 let mySubmitted = false;
 
@@ -81,6 +94,118 @@ function leaveRoom() {
     checkLoginState();
 }
 
+
+
+// --- ระบบ Transition ก้อนเมฆแบบเสถียร 100% ---
+function playCloudTransition(callback) {
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.zIndex = '99999';
+    overlay.style.pointerEvents = 'none';
+    overlay.style.overflow = 'hidden';
+    document.body.appendChild(overlay);
+
+    const clouds = [];
+    // สร้างกลุ่มเมฆสีขาวแบบทึบ ป้องกันอาการหน่วงจาก blur
+    for (let i = 0; i < 30; i++) {
+        const cloud = document.createElement('div');
+        const size = Math.random() * 400 + 300; // ใหญ่ๆ ไปเลย
+        cloud.style.position = 'absolute';
+        cloud.style.width = size + 'px';
+        cloud.style.height = (size * 0.7) + 'px';
+        cloud.style.backgroundColor = '#ffffff';
+        cloud.style.borderRadius = '50%';
+        cloud.style.opacity = '1';
+        
+        // เริ่มจากนอกจอด้านขวา
+        cloud.style.top = (Math.random() * 120 - 10) + 'vh';
+        cloud.style.left = '120vw';
+        
+        cloud.style.transition = 'left 0.8s ease-in-out';
+        
+        overlay.appendChild(cloud);
+        clouds.push(cloud);
+    }
+
+    // กระตุ้นให้เบราว์เซอร์รับรู้
+    setTimeout(() => {
+        // ให้เมฆลอยมาตรงกลางจอเพื่อบัง
+        clouds.forEach(c => {
+            c.style.left = (Math.random() * 80) + 'vw';
+            // ปรับตำแหน่งให้อยู่กลางจอมากขึ้น
+            if (parseInt(c.style.left) > 60) c.style.left = '50vw';
+        });
+        
+        // บังเพิ่มความชัวร์ด้วยจอกลายเป็นสีขาว
+        overlay.style.transition = 'background-color 0.5s ease-in-out';
+        overlay.style.backgroundColor = 'rgba(255,255,255,0.9)';
+    }, 50);
+
+    // เปลี่ยนฉากหลังจากเมฆบังมิด
+    setTimeout(() => {
+        if (callback) callback();
+        
+        // เอาฉากขาวออก
+        overlay.style.backgroundColor = 'transparent';
+        
+        // เมฆลอยออกไปทางซ้าย
+        clouds.forEach(c => {
+            c.style.left = '-150vw';
+        });
+
+        // ลบเมฆทิ้ง
+        setTimeout(() => {
+            overlay.remove();
+        }, 1000);
+        
+    }, 900);
+}
+
+
+// --- ระบบประกาศ Event กลางหน้าจอ ---
+function showEventAnnouncement(eventsArray) {
+    if (!eventsArray || eventsArray.length === 0) return;
+    
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '50%';
+    overlay.style.left = '50%';
+    overlay.style.transform = 'translate(-50%, -50%) scale(1.5)';
+    overlay.style.zIndex = '100000';
+    overlay.style.pointerEvents = 'none';
+    overlay.style.textAlign = 'center';
+    overlay.style.textShadow = '0 5px 15px rgba(0,0,0,0.8), 0 0 20px #e74c3c';
+    overlay.style.fontFamily = '"Kanit", sans-serif';
+    overlay.style.opacity = '0';
+    overlay.style.transition = 'all 0.5s cubic-bezier(0.25, 1.5, 0.5, 1)';
+    
+    let textHtml = "<h1 style='font-size: 5rem; margin: 0; color: #ff4757; font-weight: 900;'>⚠️ เกิดเหตุการณ์!</h1>";
+    eventsArray.forEach(evName => {
+        textHtml += "<div style='font-size: 3.5rem; color: #f1c40f; font-weight: bold; margin-top: 10px;'>" + evName + "</div>";
+    });
+    overlay.innerHTML = textHtml;
+    
+    document.body.appendChild(overlay);
+    
+    // Animate In (เด้งเข้ามากลางจอ)
+    setTimeout(() => {
+        overlay.style.opacity = '1';
+        overlay.style.transform = 'translate(-50%, -50%) scale(1)';
+    }, 50);
+    
+    // Animate Out (ค้างไว้ 3 วิ แล้วจางหายไป)
+    setTimeout(() => {
+        overlay.style.transition = 'all 0.5s ease-in';
+        overlay.style.opacity = '0';
+        overlay.style.transform = 'translate(-50%, -50%) scale(0.5)';
+        setTimeout(() => { overlay.remove(); }, 500);
+    }, 3000);
+}
+
 function hideAllScreens() {
     document.getElementById("login-screen").style.display = "none";
     document.getElementById("lobby-screen").style.display = "none";
@@ -91,30 +216,42 @@ function hideAllScreens() {
 }
 
 function showLogin() { hideAllScreens(); document.getElementById("login-screen").style.display = "flex"; }
-function showLobby(playerName) { hideAllScreens(); document.getElementById("lobby-screen").style.display = "flex"; document.getElementById("display-name").innerText = playerName; }
-function showRoom(gameId, roomCode, playerName) { hideAllScreens(); document.getElementById("room-screen").style.display = "flex"; document.getElementById("current-room-id").innerText = roomCode; document.getElementById("current-player-name").innerText = playerName; }
+function showLobby(playerName) { playCloudTransition(() => { hideAllScreens(); document.getElementById("lobby-screen").style.display = "flex"; document.getElementById("display-name").innerText = playerName; }); }
+function showRoom(gameId, roomCode, playerName) { playCloudTransition(() => { hideAllScreens(); document.getElementById("room-screen").style.display = "flex"; document.getElementById("current-room-id").innerText = roomCode; document.getElementById("current-player-name").innerText = playerName; }); }
 function showJoinPopup() { document.getElementById('join-popup').style.display = 'flex'; }
 function closeJoinPopup() { document.getElementById('join-popup').style.display = 'none'; document.getElementById('room-code-input').value = ''; }
 
 async function createRoom() {
+    const btn = document.querySelector('button[onclick="createRoom()"]');
+    const oldText = btn ? btn.innerText : '';
+    if (btn) { btn.innerText = 'กำลังสร้าง...'; btn.disabled = true; }
     try {
         const response = await fetch(API_BASE_URL + '/games', { method: 'POST' });
         if (!response.ok) throw new Error("สร้างห้องไม่สำเร็จ");
         const game = await response.json();
         await joinGameApi(game.id, game.roomCode);
-    } catch (error) { alert(error.message); }
+    } catch (error) { 
+        alert(error.message); 
+        if (btn) { btn.innerText = oldText; btn.disabled = false; }
+    }
 }
 
 async function joinRoom() {
     const code = document.getElementById('room-code-input').value.trim();
     if(!code) { alert('กรุณากรอกรหัสห้อง'); return; }
+    const btn = document.querySelector('button[onclick="joinRoom()"]');
+    const oldText = btn ? btn.innerText : '';
+    if (btn) { btn.innerText = 'กำลังเข้า...'; btn.disabled = true; }
     try {
         const res = await fetch(API_BASE_URL + '/games/code/' + code);
         if (!res.ok) throw new Error("ไม่พบห้องนี้");
         const game = await res.json();
         await joinGameApi(game.id, game.roomCode);
         closeJoinPopup();
-    } catch (error) { alert("ไม่พบห้องนี้ หรือเข้าห้องไม่สำเร็จ"); }
+    } catch (error) { 
+        alert("ไม่พบห้องนี้ หรือเข้าห้องไม่สำเร็จ"); 
+        if (btn) { btn.innerText = oldText; btn.disabled = false; }
+    }
 }
 
 async function joinGameApi(gameId, roomCode) {
@@ -159,9 +296,15 @@ async function fetchGameState() {
 
 async function startGame() {
     const gameId = localStorage.getItem('eternalClashGameId');
+    const btn = document.querySelector('button[onclick="startGame()"]');
+    if (btn) btn.style.display = 'none'; // Optimistic Update
+
     try {
         await fetch(API_BASE_URL + '/games/' + gameId + '/start', { method: 'POST' });
-    } catch (error) { alert("เกิดข้อผิดพลาดในการเริ่มเกม"); }
+    } catch (error) { 
+        alert("เกิดข้อผิดพลาดในการเริ่มเกม"); 
+        if (btn) btn.style.display = 'inline-block';
+    }
 }
 
 function handleSnapshot(snapshot) {
@@ -173,44 +316,113 @@ function handleSnapshot(snapshot) {
         }
         updateDraftUI(snapshot);
     } else if (snapshot.status === 'IN_PROGRESS') {
-        if(lastStatus !== 'IN_PROGRESS') {
+        const doGameUpdate = () => {
+            if (snapshot.currentTurn !== lastTurn) {
+                mySubmitted = false;
+                document.getElementById('command-panel').style.display = 'flex';
+                
+                if (lastTurn > 0) {
+                    updateLog(snapshot);
+                }
+                lastTurn = snapshot.currentTurn;
+            }
+            updateGameUI(snapshot);
+        };
+
+        if (lastStatus !== 'IN_PROGRESS') {
             lastStatus = 'IN_PROGRESS';
-            hideAllScreens();
-            document.getElementById('game-screen').style.display = 'flex';
+            playCloudTransition(() => {
+                hideAllScreens();
+                document.getElementById('game-screen').style.display = 'flex';
+                
+                const bgMusic = document.getElementById('bg-music');
+                if (bgMusic && bgMusic.src && bgMusic.src.includes('menu_bgm.mp3')) {
+                    bgMusic.src = '/sound/game_bgm.mp3';
+                    if (typeof isMusicPlaying !== 'undefined' && isMusicPlaying) {
+                        bgMusic.play().catch(e => console.log(e));
+                    }
+                }
+                
+                doGameUpdate();
+            });
+            return;
         }
         
-        if (snapshot.currentTurn !== lastTurn) {
-            mySubmitted = false;
-            document.getElementById('command-panel').style.display = 'flex';
-            
-            if (lastTurn > 0) {
-                updateLog(snapshot);
-            }
-            lastTurn = snapshot.currentTurn;
+        // ถ้าเป็นการเปลี่ยนเทิร์นใหม่ ให้เรียกเมฆเสมอ!
+        if (lastTurn > 0 && snapshot.currentTurn !== lastTurn) {
+            playCloudTransition(() => {
+                doGameUpdate();
+            });
+            return;
         }
-        updateGameUI(snapshot);
+        
+        // อัปเดตปกติเมื่ออยู่ในเทิร์นเดิม
+        doGameUpdate();
+
     } else if (snapshot.status === 'FINISHED') {
         if (lastStatus !== 'FINISHED') {
             lastStatus = 'FINISHED';
             hideAllScreens();
-            document.getElementById('game-over-screen').style.display = 'flex';
+            document.getElementById('game-over-screen').style.display = 'block'; // เปลี่ยนจาก flex เป็น block เพื่อให้ UI ข้างในจัดการกันเอง
+            document.getElementById('win-ui').style.display = 'none'; // ซ่อน UI
             
-            // ปิดเพลงหรือเปลี่ยนเพลงตอนจบ (ถ้าต้องการ)
-            // document.getElementById('bg-music').pause();
             if(pollingInterval) clearInterval(pollingInterval);
+            
+            // ปิดเพลงฉาก
+            const bgMusic = document.getElementById('bg-music');
+            if (bgMusic) bgMusic.pause();
             
             const winner = snapshot.players.find(p => p.alive);
             if (winner) {
                 document.getElementById('winner-name-display').innerText = winner.name;
                 document.getElementById('winner-marshal-display').innerText = winner.marshalName || 'ไม่ได้เลือก';
                 
-                const imgName = MARSHAL_IMGS[winner.marshalName] || 'Jo-Sho.jpg';
-                document.getElementById('winner-marshal-img').src = '/Marshal/' + imgName;
-                document.getElementById('winner-marshal-img').style.display = 'block';
+
+                
+                // เล่นวิดีโอ
+                const winVideo = document.getElementById('win-video');
+                const videoFile = MARSHAL_WIN_VIDEOS[winner.marshalName];
+                if (videoFile && winVideo) {
+                    winVideo.src = encodeURI('/SkillAction/win animation/' + videoFile);
+                    winVideo.load();
+                    
+                    const fallbackTimeout = setTimeout(() => {
+                        if (winVideo.currentTime === 0) {
+                            document.getElementById('win-ui').style.display = 'flex';
+                        }
+                    }, 2000);
+
+                    winVideo.onended = () => {
+                        clearTimeout(fallbackTimeout);
+                        document.getElementById('win-ui').style.display = 'flex';
+                    };
+                    
+                    winVideo.onerror = () => { 
+                        clearTimeout(fallbackTimeout);
+                        document.getElementById('win-ui').style.display = 'flex'; 
+                    };
+                    
+                    winVideo.muted = !(typeof isMusicPlaying !== 'undefined' && isMusicPlaying);
+                    
+                    winVideo.play().then(() => {
+                        clearTimeout(fallbackTimeout);
+                    }).catch(e => {
+                        winVideo.muted = true;
+                        winVideo.play().then(() => {
+                            clearTimeout(fallbackTimeout);
+                        }).catch(e2 => {
+                            clearTimeout(fallbackTimeout);
+                            document.getElementById('win-ui').style.display = 'flex';
+                        });
+                    });
+                } else {
+                    document.getElementById('win-ui').style.display = 'flex';
+                }
             } else {
                 document.getElementById('winner-name-display').innerText = 'ไม่มีผู้รอดชีวิต (เสมอ)';
                 document.getElementById('winner-name-display').style.color = '#e74c3c';
                 document.getElementById('winner-marshal-display').innerText = '-';
+                document.getElementById('win-ui').style.display = 'flex';
             }
         }
     }
@@ -260,34 +472,60 @@ async function updateDraftUI(snapshot) {
 }
 
 async function rerollMarshal() {
+    const btnWrapper = document.getElementById('draft-buttons-wrapper');
+    if (btnWrapper) btnWrapper.style.display = 'none'; // Optimistic Update
+
     try {
         const playerId = localStorage.getItem('eternalClashPlayerId');
         const res = await fetch(API_BASE_URL + '/players/' + playerId + '/marshal-candidates/reroll', { method: 'POST' });
         if(res.ok) {
             const c = await res.json();
             renderDraftCard(c.marshal);
+            if (btnWrapper) btnWrapper.style.display = 'flex';
         } else {
             alert("คุณสุ่มใหม่ครบจำนวนแล้ว!");
+            if (btnWrapper) btnWrapper.style.display = 'flex';
         }
     } catch(e) {
         console.warn("เซิร์ฟเวอร์กำลังรีสตาร์ท กรุณารอสักครู่...");
+        if (btnWrapper) btnWrapper.style.display = 'flex';
     }
 }
 
 async function confirmMarshal() {
+    const card = document.getElementById('marshal-single-card');
+    const wrapper = document.getElementById('draft-buttons-wrapper');
+    const waiting = document.getElementById('draft-waiting');
+    
+    // Optimistic Update
+    if (card) card.style.display = 'none';
+    if (wrapper) wrapper.style.display = 'none';
+    if (waiting) {
+        waiting.style.display = 'block';
+        waiting.innerHTML = 'ส่งคำสั่งเลือกขุนพลแล้ว...<br>กำลังรอระบบยืนยัน...';
+    }
+
     try {
         const playerId = localStorage.getItem('eternalClashPlayerId');
         const res = await fetch(API_BASE_URL + '/players/' + playerId + '/marshal-candidates/choose', { method: 'POST' });
         if(res.ok) {
             const m = await res.json();
             document.getElementById('ui-marshal').innerText = m.name;
-            document.getElementById('marshal-single-card').style.display = 'none';
-            document.getElementById('draft-buttons-wrapper').style.display = 'none';
-            document.getElementById('draft-waiting').style.display = 'block';
-            document.getElementById('draft-waiting').innerHTML = 'ท่านเลือก <strong style="color:white">' + m.name + '</strong> แล้ว<br>กำลังรอผู้เล่นอื่น...';
+            if (waiting) {
+                waiting.innerHTML = 'ท่านเลือก <strong style="color:white">' + m.name + '</strong> แล้ว<br>กำลังรอผู้เล่นอื่น...';
+            }
+        } else {
+            // Revert if failed
+            if (card) card.style.display = 'block';
+            if (wrapper) wrapper.style.display = 'flex';
+            if (waiting) waiting.style.display = 'none';
+            alert('เลือกขุนพลไม่สำเร็จ');
         }
     } catch(e) {
         console.warn("เซิร์ฟเวอร์กำลังรีสตาร์ท กรุณารอสักครู่...");
+        if (card) card.style.display = 'block';
+        if (wrapper) wrapper.style.display = 'flex';
+        if (waiting) waiting.style.display = 'none';
     }
 }
 
@@ -402,6 +640,10 @@ async function submitAction(actionType) {
         soldiers = parseInt(document.getElementById('attack-soldiers').value);
     }
     
+    // 1. ตอบสนอง UI ทันทีไม่ต้องรอหลังบ้าน (Optimistic Update)
+    mySubmitted = true;
+    document.getElementById('command-panel').style.display = 'none';
+
     try {
         const res = await fetch(API_BASE_URL + '/games/' + gameId + '/players/' + playerId + '/actions', {
             method: 'POST',
@@ -412,11 +654,11 @@ async function submitAction(actionType) {
         if (!res.ok) {
             const err = await res.json();
             alert(err.message || 'คำสั่งล้มเหลว');
+            // คืนค่า UI ให้กดใหม่ถ้า Server แจ้งว่าทำไม่ได้ (เช่น ทหารไม่พอ)
+            mySubmitted = false;
+            document.getElementById('command-panel').style.display = 'flex';
             return;
         }
-        
-        mySubmitted = true;
-        document.getElementById('command-panel').style.display = 'none';
         
         // เราก็บอก Backend ให้ประมวลผลเลยถ้าทุกคนส่งครบ
         // (ปกติอาจจะให้ server จัดการเอง หรือลองเรียก resolve-turn)
@@ -437,7 +679,12 @@ async function updateLog(snapshot) {
             const resE = await fetch(API_BASE_URL + '/games/' + gameId + '/events?turnNumber=' + prevTurn);
             if (resE.ok) {
                 const events = await resE.json();
-                events.forEach(ev => {
+events.forEach(ev => {
+                    // เล่นเสียงเฉพาะของแต่ละอีเวนต์
+                    const evSound = new Audio('/sound/' + ev.eventType.toLowerCase() + '.mp3');
+                    let playPromise = evSound.play();
+                    if (playPromise !== undefined) playPromise.catch(e => {});
+
                     let evName = EVENT_THAI_NAMES[ev.eventType] || ev.eventType;
                     let targetName = "";
                     if (ev.affectedPlayerId) {
@@ -460,6 +707,7 @@ async function updateLog(snapshot) {
             const resB = await fetch(API_BASE_URL + '/games/' + gameId + '/battles?turnNumber=' + prevTurn);
             if (resB.ok) {
                 const battles = await resB.json();
+if(battles.length > 0) playSound('battle-sfx');
                 battles.forEach(b => {
                     const atk = snapshot.players.find(p => p.playerId === b.attackerPlayerId);
                     const def = snapshot.players.find(p => p.playerId === b.defenderPlayerId);
@@ -516,7 +764,22 @@ function returnToLobby() {
 
 
 // --- ระบบเพลง BGM ---
-let isMusicPlaying = false;
+
+// พยายามเล่นเพลงตอนเริ่ม และผูก Event กับการคลิกเพื่อให้เล่นเพลงเมื่อเบราว์เซอร์บล็อก
+document.addEventListener('DOMContentLoaded', () => {
+    const bgMusic = document.getElementById('bg-music');
+    if (bgMusic && isMusicPlaying) {
+        bgMusic.play().catch(e => console.warn("รอผู้เล่นคลิกเพื่อเล่นเพลง..."));
+    }
+});
+document.addEventListener('click', () => {
+    const bgMusic = document.getElementById('bg-music');
+    if (bgMusic && isMusicPlaying && bgMusic.paused) {
+        bgMusic.play().catch(e => {});
+    }
+}, { once: false }); // แอบพยายามเล่นเมื่อคลิกที่ไหนก็ได้บนจอ (จนกว่าจะดัง)
+
+let isMusicPlaying = true;
 function toggleMusic() {
     const bgMusic = document.getElementById('bg-music');
     const toggleBtn = document.getElementById('music-toggle');
@@ -536,3 +799,38 @@ function toggleMusic() {
         }
     }
 }
+
+
+// --- ระบบเสียง SFX ตอนกดปุ่ม ---
+function playSound(soundId) {
+    const sfx = document.getElementById(soundId);
+    if (sfx) {
+        sfx.currentTime = 0;
+        let playPromise = sfx.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                // Ignore autoplay block for clicks
+            });
+        }
+    }
+}
+
+// ผูกระบบเสียงให้ทำงานตามประเภทของปุ่ม
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('button');
+    if (btn && btn.id !== 'music-toggle') {
+        // เช็คก่อนว่าเป็นปุ่มเลือกขุนพลหรือไม่ (ใช้คลาสสีซ้ำกับปุ่มในเกม)
+        const onclickAttr = btn.getAttribute('onclick') || '';
+        if (onclickAttr.includes('confirmMarshal') || onclickAttr.includes('rerollMarshal') || onclickAttr.includes('returnToLobby') || onclickAttr.includes('logout')) {
+            playSound('click-sfx');
+        } else if (btn.classList.contains('produce-btn')) {
+            playSound('farm-sfx');
+        } else if (btn.classList.contains('recruit-btn')) {
+            playSound('recruit-sfx');
+        } else if (btn.classList.contains('attack-btn')) {
+            playSound('attack-sfx');
+        } else {
+            playSound('click-sfx'); // ปุ่มอื่นๆ ทั่วไปใช้เสียงคลิกธรรมดา
+        }
+    }
+});
