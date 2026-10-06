@@ -38,6 +38,7 @@ const MARSHAL_IMGS = {
 };
 
 let pollingInterval = null;
+let announcedArmies = [];
 let lastTurn = -1;
 let lastSeason = null;
 let lastDaytime = null;
@@ -606,14 +607,22 @@ function updateGameUI(snapshot) {
         if (showRadar) {
             // หา incoming armies ไปหา player นี้
             let armies = snapshot.visibleArmies.filter(a => a.visibleTargetPlayerId === player.playerId);
-            let hasT1 = armies.some(a => (a.arrivalTurn - snapshot.currentTurn) === 1);
             let hasT2 = armies.some(a => (a.arrivalTurn - snapshot.currentTurn) === 2);
             // กรณีศัตรูประชิดถึงเทิร์นนี้เลย
             let hasT0 = armies.some(a => (a.arrivalTurn - snapshot.currentTurn) <= 0);
-            if(hasT0) hasT1 = true;
+            let hasT1 = armies.some(a => (a.arrivalTurn - snapshot.currentTurn) === 1);
             
-            let dot1 = hasT1 ? '<div class="dot red"></div>' : '<div class="dot white"></div>';
-            let dot2 = hasT2 ? '<div class="dot red"></div>' : '<div class="dot white"></div>';
+            let dot1 = '<div class="dot white"></div>';
+            let dot2 = '<div class="dot white"></div>';
+            
+            if (hasT0) {
+                // ห่าง 0: จุดในแดง จุดนอกขาว
+                dot1 = '<div class="dot red"></div>';
+            } else if (hasT1) {
+                // ห่าง 1: จุดในขาว จุดนอกแดง
+                dot2 = '<div class="dot red"></div>';
+            }
+            // ห่าง 2 ขึ้นไป: ขาวคู่ (ไม่เห็น)
             
             radarHTML = '<div class="radar-container" style="transform: translateY(-50%) rotate(' + angle + 'deg);">' + dot1 + dot2 + '</div>';
         }
@@ -671,7 +680,7 @@ async function updateLog(snapshot) {
     if(logContent.innerHTML.includes('ยังไม่มีเหตุการณ์')) logContent.innerHTML = '';
     
     const gameId = localStorage.getItem('eternalClashGameId');
-    const prevTurn = lastTurn - 1;
+    const prevTurn = lastTurn; // lastTurn คือเทิร์นที่เพิ่งจบไป
     
     let extraLines = '';
     if (prevTurn > 0) {
@@ -679,13 +688,49 @@ async function updateLog(snapshot) {
             const resE = await fetch(API_BASE_URL + '/games/' + gameId + '/events?turnNumber=' + prevTurn);
             if (resE.ok) {
                 const events = await resE.json();
-events.forEach(ev => {
+                
+                // ระบบแจ้งเตือนทหารข้าศึกบุก (ทำตัวเสมือนเป็น Event)
+                const myId = parseInt(localStorage.getItem('eternalClashPlayerId'));
+                const incomingArmies = snapshot.visibleArmies.filter(a => a.visibleTargetPlayerId === myId && (a.arrivalTurn - snapshot.currentTurn) <= 1);
+                let popupTexts = events.map(e => {
+                    let name = EVENT_THAI_NAMES[e.eventType] || e.eventType;
+                    if (e.description && e.description.includes("ขงเบ้ง")) name = "กลยุทธ์ขงเบ้งทำงาน!";
+                    return name;
+                });
+                let hasNewArmy = false;
+                
+                incomingArmies.forEach(a => {
+                    if (!announcedArmies.includes(a.id)) {
+                        announcedArmies.push(a.id);
+                        hasNewArmy = true;
+                        popupTexts.push('⚠️ ข้าศึกบุกประชิดเมือง!');
+                        const owner = snapshot.players.find(p => p.playerId === a.ownerPlayerId);
+                        const ownerName = owner ? owner.name : 'ศัตรู';
+                        extraLines += "<span style='color:#e74c3c; font-size: 1.1em;'>🚨 <b>เตือนภัย:</b> กองทัพของ " + ownerName + " กำลังมุ่งหน้ามาเมืองของคุณ!</span><br>";
+                    }
+                });
+                
+                // เรียกใช้ popup กลางจอรวมกันทั้งคู่!
+                if (popupTexts.length > 0) {
+                    showEventAnnouncement(popupTexts);
+                }
+                
+                if (hasNewArmy) {
+                    const alarmSound = new Audio('/sound/attack.mp3');
+                    let playPromise = alarmSound.play();
+                    if (playPromise !== undefined) playPromise.catch(e => {});
+                }
+                
+                events.forEach(ev => {
                     // เล่นเสียงเฉพาะของแต่ละอีเวนต์
                     const evSound = new Audio('/sound/' + ev.eventType.toLowerCase() + '.mp3');
                     let playPromise = evSound.play();
                     if (playPromise !== undefined) playPromise.catch(e => {});
 
                     let evName = EVENT_THAI_NAMES[ev.eventType] || ev.eventType;
+                    if (ev.description && ev.description.includes("ขงเบ้ง")) {
+                        evName = "กลยุทธ์ขงเบ้งทำงาน!";
+                    }
                     let targetName = "";
                     if (ev.affectedPlayerId) {
                         const p = snapshot.players.find(p => p.playerId === ev.affectedPlayerId);
