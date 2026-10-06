@@ -10,7 +10,7 @@ import com.eternalclash2.domain.enums.EventType;
 import com.eternalclash2.domain.enums.GameStatus;
 import com.eternalclash2.domain.enums.LocationType;
 import com.eternalclash2.domain.enums.Season;
-import com.eternalclash2.domain.service.GameClock;
+import com.eternalclash2.service.GameClock;
 import com.eternalclash2.exception.ResourceNotFoundException;
 import com.eternalclash2.repository.ArmyRepository;
 import com.eternalclash2.repository.CityRepository;
