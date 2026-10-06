@@ -15,6 +15,8 @@ public interface GameRepository extends JpaRepository<Game, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select g from Game g where g.id = :id")
     Optional<Game> findByIdForUpdate(@Param("id") Long id);
+
+    Optional<Game> findByRoomCode(String roomCode);
 }
 
 

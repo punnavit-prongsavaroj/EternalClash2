@@ -1,20 +1,4 @@
-const API_BASE_URL = '/api';
-
-const EVENT_THAI_NAMES = {
-    'SINKHOLE': 'หลุมยุบ',
-    'SUN_GLARE': 'แสงแดดแสบตา',
-    'LIGHTNING': 'พายุฟ้าผ่า',
-    'AVALANCHE': 'หิมะถล่ม',
-    'FOOD_SPOILAGE': 'อาหารเน่าเสีย',
-    'INSECT_DAMAGE': 'แมลงศัตรูพืชบุก',
-    'FROSTBITE': 'อากาศหนาวจัด (Frostbite)',
-    'EPIDEMIC': 'โรคระบาด',
-    'SLOW': 'ติดพายุ (เดินทางล่าช้า)',
-    'FLOOD': 'น้ำท่วมใหญ่',
-    'SUNBURN': 'แดดเผา',
-    'SNOW_COVER': 'พายุหิมะปกคลุม',
-    'REBELLION': 'กบฏชาวบ้านลุกฮือ'
-};
+﻿const API_BASE_URL = '/api';
 
 const MARSHAL_IMGS = {
     'ขงเบ้ง': 'kong-beng.jpg',
@@ -43,10 +27,9 @@ function startPolling() {
 function checkLoginState() {
     const savedName = localStorage.getItem("eternalClashPlayerName");
     const savedGameId = localStorage.getItem("eternalClashGameId");
-    const savedRoomCode = localStorage.getItem("eternalClashRoomCode") || savedGameId;
     
     if (savedGameId) {
-        showRoom(savedGameId, savedRoomCode, savedName);
+        showRoom(savedGameId, savedName);
         startPolling();
     } else if (savedName && savedName.trim() !== "") {
         showLobby(savedName);
@@ -87,12 +70,11 @@ function hideAllScreens() {
     document.getElementById("room-screen").style.display = "none";
     document.getElementById("draft-screen").style.display = "none";
     document.getElementById("game-screen").style.display = "none";
-    document.getElementById("game-over-screen").style.display = "none";
 }
 
 function showLogin() { hideAllScreens(); document.getElementById("login-screen").style.display = "flex"; }
 function showLobby(playerName) { hideAllScreens(); document.getElementById("lobby-screen").style.display = "flex"; document.getElementById("display-name").innerText = playerName; }
-function showRoom(gameId, roomCode, playerName) { hideAllScreens(); document.getElementById("room-screen").style.display = "flex"; document.getElementById("current-room-id").innerText = roomCode; document.getElementById("current-player-name").innerText = playerName; }
+function showRoom(gameId, playerName) { hideAllScreens(); document.getElementById("room-screen").style.display = "flex"; document.getElementById("current-room-id").innerText = gameId; document.getElementById("current-player-name").innerText = playerName; }
 function showJoinPopup() { document.getElementById('join-popup').style.display = 'flex'; }
 function closeJoinPopup() { document.getElementById('join-popup').style.display = 'none'; document.getElementById('room-code-input').value = ''; }
 
@@ -101,7 +83,7 @@ async function createRoom() {
         const response = await fetch(API_BASE_URL + '/games', { method: 'POST' });
         if (!response.ok) throw new Error("สร้างห้องไม่สำเร็จ");
         const game = await response.json();
-        await joinGameApi(game.id, game.roomCode);
+        await joinGameApi(game.id);
     } catch (error) { alert(error.message); }
 }
 
@@ -109,15 +91,12 @@ async function joinRoom() {
     const code = document.getElementById('room-code-input').value.trim();
     if(!code) { alert('กรุณากรอกรหัสห้อง'); return; }
     try {
-        const res = await fetch(API_BASE_URL + '/games/code/' + code);
-        if (!res.ok) throw new Error("ไม่พบห้องนี้");
-        const game = await res.json();
-        await joinGameApi(game.id, game.roomCode);
+        await joinGameApi(code);
         closeJoinPopup();
     } catch (error) { alert("ไม่พบห้องนี้ หรือเข้าห้องไม่สำเร็จ"); }
 }
 
-async function joinGameApi(gameId, roomCode) {
+async function joinGameApi(gameId) {
     const playerName = localStorage.getItem("eternalClashPlayerName");
     const response = await fetch(API_BASE_URL + '/games/' + gameId + '/players', {
         method: 'POST',
@@ -128,8 +107,7 @@ async function joinGameApi(gameId, roomCode) {
     const player = await response.json();
     localStorage.setItem("eternalClashGameId", gameId);
     localStorage.setItem("eternalClashPlayerId", player.id);
-    localStorage.setItem("eternalClashRoomCode", roomCode);
-    showRoom(gameId, roomCode, playerName);
+    showRoom(gameId, playerName);
     startPolling();
 }
 
@@ -170,8 +148,8 @@ function handleSnapshot(snapshot) {
             lastStatus = 'MARSHAL_SELECTION';
             hideAllScreens();
             document.getElementById('draft-screen').style.display = 'flex';
+            fetchCurrentDraft();
         }
-        updateDraftUI(snapshot);
     } else if (snapshot.status === 'IN_PROGRESS') {
         if(lastStatus !== 'IN_PROGRESS') {
             lastStatus = 'IN_PROGRESS';
@@ -192,99 +170,40 @@ function handleSnapshot(snapshot) {
     } else if (snapshot.status === 'FINISHED') {
         if (lastStatus !== 'FINISHED') {
             lastStatus = 'FINISHED';
-            hideAllScreens();
-            document.getElementById('game-over-screen').style.display = 'flex';
-            if(pollingInterval) clearInterval(pollingInterval);
-            
-            const winner = snapshot.players.find(p => p.alive);
-            if (winner) {
-                document.getElementById('winner-name-display').innerText = winner.name;
-                document.getElementById('winner-marshal-display').innerText = winner.marshalName || 'ไม่ได้เลือก';
-                
-                const imgName = MARSHAL_IMGS[winner.marshalName] || 'Jo-Sho.jpg';
-                document.getElementById('winner-marshal-img').src = '/Marshal/' + imgName;
-                document.getElementById('winner-marshal-img').style.display = 'block';
-            } else {
-                document.getElementById('winner-name-display').innerText = 'ไม่มีผู้รอดชีวิต (เสมอ)';
-                document.getElementById('winner-name-display').style.color = '#e74c3c';
-                document.getElementById('winner-marshal-display').innerText = '-';
-            }
+            alert('เกมจบแล้ว!');
         }
     }
 }
 
 // ----- DRAFT PHASE -----
-async function updateDraftUI(snapshot) {
-    const playerId = parseInt(localStorage.getItem('eternalClashPlayerId'));
-    const me = snapshot.players.find(p => p.playerId === playerId);
-    
-    // เรียงตาม ID หรือดูจากใครที่ยังไม่มี marshalName เป็นคนแรก
-    const currentDraftPlayer = snapshot.players.find(p => !p.marshalName);
-    
-    const card = document.getElementById('marshal-single-card');
-    const btnWrapper = document.getElementById('draft-buttons-wrapper');
-    const waitMsg = document.getElementById('draft-waiting');
-    
-    if (me.marshalName) {
-        card.style.display = 'none';
-        btnWrapper.style.display = 'none';
-        waitMsg.style.display = 'block';
-        waitMsg.innerHTML = 'ท่านเลือก <strong style="color:white">' + me.marshalName + '</strong> แล้ว<br>กำลังรอผู้เล่นอื่น...';
-        return;
-    }
-    
-    if (currentDraftPlayer && currentDraftPlayer.playerId === playerId) {
-        // ตาของฉัน!
-        card.style.display = 'block';
-        btnWrapper.style.display = 'flex';
-        waitMsg.style.display = 'none';
-        
-        // โหลดข้อมูลถ้ายังไม่แสดง
-        if (!card.innerHTML.includes('จุดเด่น')) {
-            const res = await fetch(API_BASE_URL + '/players/' + playerId + '/marshal-candidates');
-            if(res.ok) {
-                const list = await res.json();
-                if(list.length > 0) renderDraftCard(list[0].marshal);
-            }
-        }
-    } else if (currentDraftPlayer) {
-        // ตาคนอื่น
-        card.style.display = 'none';
-        btnWrapper.style.display = 'none';
-        waitMsg.style.display = 'block';
-        waitMsg.innerHTML = '<h3 style="color:#f39c12">รอผู้เล่น ' + currentDraftPlayer.name + ' เลือกแม่ทัพก่อน...</h3>';
-    }
+async function fetchCurrentDraft() {
+    const playerId = localStorage.getItem('eternalClashPlayerId');
+    const res = await fetch(API_BASE_URL + '/players/' + playerId + '/marshal-candidates');
+    if(!res.ok) return;
+    const list = await res.json();
+    if(list.length > 0) renderDraftCard(list[0].marshal);
 }
 
 async function rerollMarshal() {
-    try {
-        const playerId = localStorage.getItem('eternalClashPlayerId');
-        const res = await fetch(API_BASE_URL + '/players/' + playerId + '/marshal-candidates/reroll', { method: 'POST' });
-        if(res.ok) {
-            const c = await res.json();
-            renderDraftCard(c.marshal);
-        } else {
-            alert("คุณสุ่มใหม่ครบจำนวนแล้ว!");
-        }
-    } catch(e) {
-        console.warn("เซิร์ฟเวอร์กำลังรีสตาร์ท กรุณารอสักครู่...");
+    const playerId = localStorage.getItem('eternalClashPlayerId');
+    const res = await fetch(API_BASE_URL + '/players/' + playerId + '/marshal-candidates/reroll', { method: 'POST' });
+    if(res.ok) {
+        const c = await res.json();
+        renderDraftCard(c.marshal);
+    } else {
+        alert("คุณสุ่มใหม่ครบจำนวนแล้ว!");
     }
 }
 
 async function confirmMarshal() {
-    try {
-        const playerId = localStorage.getItem('eternalClashPlayerId');
-        const res = await fetch(API_BASE_URL + '/players/' + playerId + '/marshal-candidates/choose', { method: 'POST' });
-        if(res.ok) {
-            const m = await res.json();
-            document.getElementById('ui-marshal').innerText = m.name;
-            document.getElementById('marshal-single-card').style.display = 'none';
-            document.getElementById('draft-buttons-wrapper').style.display = 'none';
-            document.getElementById('draft-waiting').style.display = 'block';
-            document.getElementById('draft-waiting').innerHTML = 'ท่านเลือก <strong style="color:white">' + m.name + '</strong> แล้ว<br>กำลังรอผู้เล่นอื่น...';
-        }
-    } catch(e) {
-        console.warn("เซิร์ฟเวอร์กำลังรีสตาร์ท กรุณารอสักครู่...");
+    const playerId = localStorage.getItem('eternalClashPlayerId');
+    const res = await fetch(API_BASE_URL + '/players/' + playerId + '/marshal-candidates/choose', { method: 'POST' });
+    if(res.ok) {
+        const m = await res.json();
+        document.getElementById('ui-marshal').innerText = m.name;
+        const buttons = document.querySelectorAll('#draft-screen button');
+        buttons.forEach(btn => btn.style.display = 'none');
+        document.getElementById('draft-waiting').style.display = 'block';
     }
 }
 
@@ -421,56 +340,9 @@ async function submitAction(actionType) {
     } catch(e) { alert(e.message); }
 }
 
-async function updateLog(snapshot) {
+function updateLog(snapshot) {
     const logContent = document.getElementById('log-content');
     if(logContent.innerHTML.includes('ยังไม่มีเหตุการณ์')) logContent.innerHTML = '';
-    
-    const gameId = localStorage.getItem('eternalClashGameId');
-    const prevTurn = lastTurn - 1;
-    
-    let extraLines = '';
-    if (prevTurn > 0) {
-        try {
-            const resE = await fetch(API_BASE_URL + '/games/' + gameId + '/events?turnNumber=' + prevTurn);
-            if (resE.ok) {
-                const events = await resE.json();
-                events.forEach(ev => {
-                    let evName = EVENT_THAI_NAMES[ev.eventType] || ev.eventType;
-                    let targetName = "";
-                    if (ev.affectedPlayerId) {
-                        const p = snapshot.players.find(p => p.playerId === ev.affectedPlayerId);
-                        targetName = p ? "เมืองของ " + p.name : "เมืองปริศนา";
-                    } else if (ev.affectedArmyId) {
-                        targetName = "กองทัพที่กำลังเดินทาง";
-                    }
-                    
-                    let impactStr = [];
-                    if (ev.foodImpact && ev.foodImpact !== 0) impactStr.push("เสบียง " + ev.foodImpact);
-                    if (ev.soldierImpact && ev.soldierImpact !== 0) impactStr.push("ทหาร " + ev.soldierImpact);
-                    if (ev.extraTravelTurns && ev.extraTravelTurns !== 0) impactStr.push("ดีเลย์ " + ev.extraTravelTurns + " เทิร์น");
-                    
-                    let detail = impactStr.length > 0 ? " (ผลกระทบ: " + impactStr.join(", ") + ")" : "";
-                    
-                    extraLines += "<span style='color:#9b59b6'>⚡ <b>อีเวนต์: [" + evName + "]</b> เกิดขึ้นที่ " + targetName + detail + "</span><br>";
-                });
-            }
-            const resB = await fetch(API_BASE_URL + '/games/' + gameId + '/battles?turnNumber=' + prevTurn);
-            if (resB.ok) {
-                const battles = await resB.json();
-                battles.forEach(b => {
-                    const atk = snapshot.players.find(p => p.playerId === b.attackerPlayerId);
-                    const def = snapshot.players.find(p => p.playerId === b.defenderPlayerId);
-                    const atkName = atk ? atk.name : 'ศัตรู';
-                    const defName = def ? def.name : 'ศัตรู';
-                    
-                    extraLines += "⚔️ <b style='color:#e74c3c'>" + atkName + " ปะทะ " + defName + "</b> (สูญเสีย: รุก " + b.attackerCasualties + ", รับ " + b.defenderCasualties + ")<br>";
-                    if (b.cityDestroyed) {
-                        extraLines += "💥 <b style='color:#c0392b; font-size:1.1rem;'>เมืองของ " + defName + " แตกพ่าย!</b><br>";
-                    }
-                });
-            }
-        } catch(e) {}
-    }
     
     let actionLines = '';
     snapshot.visibleActions.forEach(act => {
@@ -485,11 +357,11 @@ async function updateLog(snapshot) {
         actionLines += "🏰 " + name + " เลือก: " + actStr + "<br>";
     });
     
-    if(actionLines === '' && extraLines === '') actionLines = '<i>ไม่มีความเคลื่อนไหวที่มองเห็นได้</i><br>';
+    if(actionLines === '') actionLines = '<i>ไม่มีความเคลื่อนไหวที่มองเห็นได้</i>';
     
     const newLog = "<div style='margin-bottom: 10px; line-height: 1.5;'>" +
-                   "<strong style='color:#f39c12'>[สรุปเหตุการณ์ เทิร์น " + prevTurn + "]</strong><br>" +
-                   actionLines + extraLines +
+                   "<strong style='color:#f39c12'>[สรุปแอคชัน เทิร์น " + (lastTurn-1) + "]</strong><br>" +
+                   actionLines +
                    "</div><hr style='border-color: #7f8c8d; margin: 10px 0;'>";
                    
     logContent.innerHTML = newLog + logContent.innerHTML;
@@ -504,9 +376,3 @@ function toggleLog() {
 function openAttackModal() { document.getElementById('attack-modal').style.display = 'flex'; }
 function closeAttackModal() { document.getElementById('attack-modal').style.display = 'none'; }
 function confirmAttack() { closeAttackModal(); submitAction('SEND_ARMY'); }
-function returnToLobby() {
-    localStorage.removeItem("eternalClashGameId");
-    localStorage.removeItem("eternalClashPlayerId");
-    if(pollingInterval) clearInterval(pollingInterval);
-    checkLoginState();
-}
