@@ -1,0 +1,30 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+doc/
+img/
+README.md
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Build artifacts (we rebuild inside Docker)
+code/target/
+
+# Docker
+docker-compose.yml
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# CI/CD
+.github/
+
+# Test
+test/

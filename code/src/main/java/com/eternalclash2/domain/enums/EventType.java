@@ -1,0 +1,9 @@
+package com.eternalclash2.domain.enums;
+
+public enum EventType {
+    SINKHOLE, SUN_GLARE, LIGHTNING, AVALANCHE, 
+    FOOD_SPOILAGE, INSECT_DAMAGE, FROSTBITE, EPIDEMIC, 
+    SLOW, FLOOD, SUNBURN, SNOW_COVER, REBELLION
+}
+
+
