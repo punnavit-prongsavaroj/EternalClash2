@@ -1,54 +1,9 @@
-# ============================================================
-#  EternalClash2 — Docker Compose (Local Development)
-# ============================================================
-#  Usage:
-#    docker-compose up -d          # Start all services
-#    docker-compose up --build     # Rebuild and start
-#    docker-compose down           # Stop all services
-#    docker-compose down -v        # Stop and remove volumes
-#    docker-compose logs -f app    # Follow app logs
-# ============================================================
-
+version: '3.8'
 services:
-  # ── PostgreSQL Database ───────────────────────────────────
-  db:
-    image: postgres:16-alpine
-    container_name: eternalclash2-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: eternalclash2
-      POSTGRES_USER: eternalclash2
-      POSTGRES_PASSWORD: eternalclash2pass
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U eternalclash2" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # ── Spring Boot Application ──────────────────────────────
-  app:
-    build:
-      context: .
+  web:
+    build: 
+      context: ./code
       dockerfile: Dockerfile
-    container_name: eternalclash2-app
-    restart: unless-stopped
     ports:
       - "8080:8080"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/eternalclash2
-      SPRING_DATASOURCE_USERNAME: eternalclash2
-      SPRING_DATASOURCE_PASSWORD: eternalclash2pass
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_JPA_SHOW_SQL: "false"
-      SPRING_PROFILES_ACTIVE: prod
-    depends_on:
-      db:
-        condition: service_healthy
-
-volumes:
-  postgres_data:
-    driver: local
+    restart: unless-stopped

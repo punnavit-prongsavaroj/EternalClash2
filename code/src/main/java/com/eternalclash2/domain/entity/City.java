@@ -24,9 +24,11 @@ public class City {
     private String name;
 
     @Column(nullable = false)
+    @Builder.Default
     private Integer food = 50;
 
     @Column(nullable = false)
+    @Builder.Default
     private Integer soldiers = 0;
 }
 

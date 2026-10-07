@@ -14,6 +14,7 @@ import com.eternalclash2.repository.CityRepository;
 import com.eternalclash2.repository.GameRepository;
 import com.eternalclash2.repository.PlayerRepository;
 import com.eternalclash2.repository.TurnActionRepository;
+import com.eternalclash2.repository.GameEventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,7 @@ public class TurnActionService {
     private final CityRepository cityRepository;
     private final CityService cityService;
     private final ArmyService armyService;
+    private final GameEventRepository gameEventRepository;
 
     @Transactional
     public TurnAction performAction(Long gameId, Long playerId, ActionType requestedAction,
@@ -58,7 +60,7 @@ public class TurnActionService {
         PlayerActionCommand command = switch (requestedAction) {
             case PRODUCE_FOOD -> new ProduceFoodCommand(cityService, playerId, turn);
             case RECRUIT_SOLDIERS -> new RecruitSoldiersCommand(cityService, playerId, turn);
-            case SEND_ARMY -> new SendArmyCommand(armyService, player, targetPlayerId, soldierCount, turn);
+            case SEND_ARMY -> new SendArmyCommand(armyService, player, targetPlayerId, soldierCount, turn, gameEventRepository, game);
             case NONE -> new NoneCommand();
         };
 

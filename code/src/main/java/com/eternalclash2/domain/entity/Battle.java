@@ -54,6 +54,7 @@ public class Battle {
     private Integer defenderCasualties;
 
     @Column(name = "is_city_destroyed", nullable = false)
+    @Builder.Default
     private Boolean isCityDestroyed = false;
 
     @Enumerated(EnumType.STRING)

@@ -31,12 +31,14 @@ public class Player {
     private Marshal marshal;
 
     @Column(name = "is_alive", nullable = false)
+    @Builder.Default
     private Boolean isAlive = true;
 
     @Column(name = "eliminated_at_turn")
     private Integer eliminatedAtTurn;
 
     @Column(name = "reroll_count", nullable = false)
+    @Builder.Default
     private Integer rerollCount = 0;
 
     @CreationTimestamp

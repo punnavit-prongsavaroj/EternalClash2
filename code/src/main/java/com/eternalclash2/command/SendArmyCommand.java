@@ -5,6 +5,11 @@ import com.eternalclash2.domain.entity.Player;
 import com.eternalclash2.domain.enums.ActionType;
 import com.eternalclash2.exception.BusinessLogicException;
 import com.eternalclash2.service.ArmyService;
+import com.eternalclash2.repository.GameEventRepository;
+import com.eternalclash2.domain.entity.GameEvent;
+import com.eternalclash2.domain.entity.Game;
+import com.eternalclash2.domain.enums.EventType;
+import com.eternalclash2.domain.enums.LocationType;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class SendArmyCommand implements PlayerActionCommand {
@@ -16,7 +21,12 @@ public class SendArmyCommand implements PlayerActionCommand {
     private ActionType recordedAction = ActionType.SEND_ARMY;
     private Army army;
 
-    public SendArmyCommand(ArmyService armyService, Player player, Long targetPlayerId, Integer soldierCount, int turn) {
+    private final GameEventRepository gameEventRepository;
+    private final Game game;
+
+    public SendArmyCommand(ArmyService armyService, Player player, Long targetPlayerId, Integer soldierCount, int turn, GameEventRepository gameEventRepository, Game game) {
+        this.gameEventRepository = gameEventRepository;
+        this.game = game;
         this.armyService = armyService;
         this.player = player;
         this.targetPlayerId = targetPlayerId;
@@ -31,6 +41,12 @@ public class SendArmyCommand implements PlayerActionCommand {
         }
         if (hasSpecial(player, "SURVIVE_DESTRUCTION") && ThreadLocalRandom.current().nextInt(100) < 20) {
             recordedAction = ActionType.NONE;
+            // สร้าง Event แจ้งเตือนผู้เล่นว่าโดนสกิลขัดขวาง
+            if (gameEventRepository != null) {
+                gameEventRepository.save(GameEvent.builder().game(game).turnNumber(turn).eventType(EventType.REBELLION)
+                        .affectedPlayer(player).locationType(LocationType.IN_CITY).foodImpact(0).soldierImpact(0)
+                        .extraTravelTurns(0).description("ขงเบ้งลังเล! กองทัพไม่ได้ถูกส่งออกไป (เสีย Action)").build());
+            }
         } else {
             army = armyService.sendArmy(player.getId(), targetPlayerId, soldierCount, turn);
         }
