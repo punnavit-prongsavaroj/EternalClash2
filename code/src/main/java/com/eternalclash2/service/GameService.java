@@ -15,6 +15,8 @@ import java.util.UUID;
 import java.util.Random;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -71,6 +73,9 @@ public class GameService {
 
     @Transactional(readOnly = true)
     public List<Game> findAll() { return gameRepository.findAll(); }
+
+    @Transactional(readOnly = true)
+    public Page<Game> findAll(Pageable pageable) { return gameRepository.findAll(pageable); }
 
     @Transactional(readOnly = true)
     public Game findById(Long id) { return getGame(id); }

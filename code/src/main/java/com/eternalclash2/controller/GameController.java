@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 @RestController
 @RequestMapping("/api/games")
@@ -29,8 +32,8 @@ public class GameController {
     }
 
     @GetMapping
-    public ResponseEntity<List<GameDto>> getAllGames() {
-        return ResponseEntity.ok(gameService.findAll().stream().map(GameDto::from).toList());
+    public ResponseEntity<Page<GameDto>> getAllGames(@PageableDefault(size = 10, sort = "createdAt") Pageable pageable) {
+        return ResponseEntity.ok(gameService.findAll(pageable).map(GameDto::from));
     }
 
     @GetMapping("/{gameId}")

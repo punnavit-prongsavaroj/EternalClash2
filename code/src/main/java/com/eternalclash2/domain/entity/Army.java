@@ -39,6 +39,7 @@ public class Army {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
+    @Builder.Default
     private ArmyStatus status = ArmyStatus.TRAVELING;
 
     @CreationTimestamp
