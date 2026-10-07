@@ -1,4 +1,4 @@
-package com.eternalclash2.domain.service;
+package com.eternalclash2.service;
 
 import com.eternalclash2.domain.enums.Season;
 

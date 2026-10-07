@@ -3,7 +3,7 @@ package com.eternalclash2.service;
 import com.eternalclash2.domain.entity.Game;
 import com.eternalclash2.domain.entity.Player;
 import com.eternalclash2.domain.enums.GameStatus;
-import com.eternalclash2.domain.service.GameClock;
+import com.eternalclash2.service.GameClock;
 import com.eternalclash2.exception.BusinessLogicException;
 import com.eternalclash2.exception.ResourceNotFoundException;
 import com.eternalclash2.repository.GameRepository;
