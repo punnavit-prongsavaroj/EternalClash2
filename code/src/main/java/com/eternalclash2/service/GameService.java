@@ -11,8 +11,12 @@ import com.eternalclash2.repository.PlayerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.UUID;
+import java.util.Random;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +31,17 @@ public class GameService {
 
     @Transactional
     public Game createGame() {
-        return gameRepository.save(Game.builder().status(GameStatus.WAITING).currentTurnNumber(0).build());
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        StringBuilder sb = new StringBuilder();
+        Random rnd = new Random();
+        for (int i = 0; i < 6; i++) sb.append(chars.charAt(rnd.nextInt(chars.length())));
+        return gameRepository.save(Game.builder().roomCode(sb.toString()).status(GameStatus.WAITING).currentTurnNumber(0).build());
+    }
+    
+    @Transactional(readOnly = true)
+    public Game findByRoomCode(String roomCode) {
+        return gameRepository.findByRoomCode(roomCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Game not found with room code: " + roomCode));
     }
 
     @Transactional
@@ -59,6 +73,9 @@ public class GameService {
 
     @Transactional(readOnly = true)
     public List<Game> findAll() { return gameRepository.findAll(); }
+
+    @Transactional(readOnly = true)
+    public Page<Game> findAll(Pageable pageable) { return gameRepository.findAll(pageable); }
 
     @Transactional(readOnly = true)
     public Game findById(Long id) { return getGame(id); }

@@ -1,0 +1,511 @@
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Prompt', sans-serif;
+}
+
+body, html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: transparent; /* เปลี่ยนเป็นโปร่งใสเพื่อไม่ให้บังวิดีโอ */
+}
+
+.screen {
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+/* Background Video */
+#bg-video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    object-position: top center; /* บังคับวิดีโอให้ชิดขอบบน หัวจะได้ไม่ขาด */
+    z-index: -1;
+}
+
+/* Lobby Background */
+.lobby-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('../Menu/menuBG.jpg'); /* อัปเดตให้ตรงกับไฟล์ที่มี */
+    background-size: cover;
+    background-position: center;
+    z-index: -1;
+    background-color: #2c3e50; /* สีสำรองถ้ารูปไม่ขึ้น */
+}
+
+/* รูปตัวละครซ้ายขวาในหน้า Lobby */
+.lobby-character-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    z-index: 0;
+    pointer-events: none; /* เพื่อไม่ให้รูปบล็อกการกดปุ่มต่างๆ */
+    overflow: hidden; /* เผื่อรูปใหญ่ทะลุจอ จะได้ตัดขอบให้เนียนๆ */
+}
+
+.half-screen {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; /* เปลี่ยนให้ไปยืนติดขอบจอด้านล่างแทนการลอยอยู่ตรงกลาง */
+}
+
+.character-img {
+    max-width: 150%; /* ขยายลิมิตความกว้างให้ใหญ่ได้เต็มที่ */
+    height: 130vh; /* สูงทะลุจอไปเลย (130% ของความสูงหน้าจอ) */
+    object-fit: contain;
+    transform: translateY(20%); /* ดึงรูปลงมาด้านล่างมากขึ้นชดเชยกับส่วนที่ใหญ่ขึ้น */
+    filter: drop-shadow(0px 10px 20px rgba(0,0,0,0.5)); 
+}
+
+/* แผงกระจก (Glassmorphism) */
+.glass-panel {
+    position: relative;
+    z-index: 1; /* ให้อยู่เหนือรูป Bg.png */
+    background: rgba(15, 15, 15, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    padding: 40px;
+    color: white;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+}
+
+.login-container {
+    width: 400px;
+    max-width: 90%;
+    text-align: center;
+}
+
+.game-title {
+    font-size: 5rem;
+    color: #f39c12;
+    text-shadow: 4px 4px 15px rgba(0,0,0,0.9), 0px 0px 25px rgba(243, 156, 18, 0.7);
+    letter-spacing: 4px;
+    margin-bottom: 40px;
+    text-transform: uppercase;
+}
+
+.login-container p {
+    margin-bottom: 20px;
+    color: #fff;
+    font-size: 1.2rem;
+    text-shadow: 2px 2px 5px rgba(0,0,0,0.9);
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    border: 2px solid rgba(243, 156, 18, 0.5);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    font-size: 1.1rem;
+    outline: none;
+    transition: 0.3s;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+input[type="text"]:focus {
+    border-color: #f39c12;
+    box-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
+}
+
+button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    background: #d35400;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+button:hover {
+    background: #e67e22;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(211, 84, 0, 0.4);
+}
+
+/* Lobby Styles */
+.lobby-header {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+}
+
+.highlight {
+    color: #f1c40f;
+    font-weight: 600;
+}
+
+.logout-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+    width: auto;
+    padding: 10px 25px;
+    background: #c0392b;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.logout-btn:hover {
+    background: #e74c3c;
+    box-shadow: 0 4px 15px rgba(192, 57, 43, 0.6);
+    transform: translateY(-2px);
+}
+
+.player-name-display {
+    position: fixed;
+    top: 25px;
+    left: 25px;
+    z-index: 100;
+    color: #ecf0f1;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 5px rgba(0,0,0,0.9);
+}
+
+.bottom-actions {
+    position: fixed;
+    bottom: 40px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 10vw;
+    z-index: 100;
+}
+
+.action-btn {
+    width: 250px;
+    padding: 15px 0;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+    color: white;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+}
+
+.create-btn {
+    background: #27ae60;
+}
+.create-btn:hover {
+    background: #2ecc71;
+    box-shadow: 0 4px 15px rgba(39, 174, 96, 0.6);
+    transform: translateY(-2px);
+}
+
+.join-btn {
+    background: #2980b9;
+}
+.join-btn:hover {
+    background: #3498db;
+    box-shadow: 0 4px 15px rgba(41, 128, 185, 0.6);
+    transform: translateY(-2px);
+}
+
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+}
+
+.popup-box {
+    padding: 40px;
+    width: 400px;
+    text-align: center;
+    border: 2px solid #f39c12;
+    border-radius: 12px;
+}
+
+.popup-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+}
+
+.popup-buttons .action-btn {
+    width: 48%;
+    font-size: 1.1rem;
+    padding: 10px 0;
+}
+
+.cancel-btn {
+    background: #7f8c8d;
+}
+.cancel-btn:hover {
+    background: #95a5a6;
+    box-shadow: 0 4px 15px rgba(127, 140, 141, 0.6);
+}
+
+/* --- Draft Screen --- */
+.marshal-card {
+    background: rgba(0,0,0,0.8);
+    border: 2px solid #34495e;
+    border-radius: 10px;
+    padding: 20px;
+    width: 250px;
+    color: white;
+    text-align: center;
+    transition: 0.3s;
+    cursor: pointer;
+}
+.marshal-card:hover {
+    border-color: #f39c12;
+    transform: translateY(-10px);
+    box-shadow: 0 10px 20px rgba(243, 156, 18, 0.4);
+}
+.marshal-card h3 { color: #f39c12; margin-bottom: 10px; font-size: 1.5rem; }
+.marshal-card p { font-size: 1rem; color: #bdc3c7; margin-bottom: 5px; }
+
+/* --- Game Dashboard --- */
+.game-dashboard {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    padding: 20px 40px;
+    z-index: 10;
+    box-sizing: border-box;
+}
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+}
+.player-resources {
+    display: flex; gap: 30px; font-size: 1.2rem; font-weight: bold; color: white;
+}
+.main-battlefield {
+    display: flex; justify-content: center; gap: 40px; flex: 1;
+}
+.command-panel, .enemy-panel {
+    padding: 30px; border-radius: 12px; width: 45%; max-width: 500px;
+    display: flex; flex-direction: column;
+}
+.command-panel .action-btn { margin-bottom: 15px; width: 100%; padding: 15px; font-size: 1.2rem; }
+.produce-btn { background: #27ae60; }
+.recruit-btn { background: #8e44ad; }
+.attack-btn { background: #c0392b; }
+.enemy-item {
+    padding: 10px; border-bottom: 1px solid #7f8c8d;
+    display: flex; justify-content: space-between;
+}
+
+
+/* --- Map & Castle Styling --- */
+.castle-node {
+    position: absolute;
+    text-align: center;
+    transform: translate(-50%, -50%);
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.castle-node:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+}
+.castle-icon {
+    font-size: 3rem;
+    filter: drop-shadow(0 0 5px rgba(0,0,0,0.8));
+    line-height: 1;
+}
+.castle-name {
+    background: rgba(0,0,0,0.7);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    margin-top: 5px;
+    border: 1px solid #7f8c8d;
+}
+.my-castle .castle-name {
+    border-color: #f39c12;
+    color: #f39c12;
+    font-weight: bold;
+}
+.radar-dots {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 5px;
+}
+.dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #7f8c8d;
+    box-shadow: inset 0 0 3px #000;
+}
+.dot.active {
+    background: #e74c3c;
+    box-shadow: 0 0 8px #e74c3c;
+    animation: blink 1s infinite alternate;
+}
+@keyframes blink {
+    from { opacity: 1; }
+    to { opacity: 0.4; }
+}
+
+
+.radar-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: 0 50%;
+    display: flex;
+    gap: 8px;
+    /* ҧ͡ҡҷ */
+    padding-left: 50px; 
+    align-items: center;
+    pointer-events: none;
+}
+.dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #e74c3c;
+    box-shadow: 0 0 10px #e74c3c;
+    animation: blink 0.8s infinite alternate;
+}
+
+
+.dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 3px #000;
+}
+.dot.red {
+    background: #e74c3c;
+    box-shadow: 0 0 10px #e74c3c;
+    animation: blink 0.8s infinite alternate;
+}
+.dot.white {
+    background: #ecf0f1;
+    box-shadow: 0 0 10px #ecf0f1;
+}
+
+
+/* =========================================
+   Responsive Design & Mobile Adjustments
+   ========================================= */
+
+/* Portrait Lock Animation & Trigger */
+@keyframes rotatePhone {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(-90deg); }
+    100% { transform: rotate(0deg); }
+}
+
+@media screen and (orientation: portrait) {
+    #portrait-lock {
+        display: flex !important;
+    }
+    #game-screen, #lobby-screen, #room-screen {
+        display: none !important;
+    }
+}
+
+/* Landscape Phones & iPads (Max height 600px or Max width 1024px) */
+@media screen and (max-height: 600px), screen and (max-width: 1024px) {
+    /* Scale down the manual panel */
+    #manual-panel h3 { font-size: 1.2rem !important; }
+    #manual-panel button { font-size: 2.5rem !important; }
+    #manual-panel .action-btn { font-size: 0.9rem !important; padding: 5px 10px !important; }
+    
+    /* Scale down the command panel */
+    #command-panel {
+        transform: translate(-50%, -50%) scale(0.8) !important;
+    }
+    
+    /* Scale down draft cards */
+    #marshal-single-card {
+        transform: scale(0.7);
+        transform-origin: top center;
+        margin-bottom: -150px !important;
+    }
+    #draft-buttons-wrapper {
+        margin-top: -30px !important;
+    }
+
+    /* Shrink HUD elements */
+    #turn-display { font-size: 1.5rem !important; padding: 5px 15px !important; top: 10px !important; }
+    #season-display { font-size: 1.2rem !important; padding: 5px 15px !important; top: 50px !important; }
+    
+    .player-name-display { font-size: 1rem !important; top: 10px !important; left: 10px !important; }
+    .resource-display { font-size: 1rem !important; top: 40px !important; left: 10px !important; }
+    
+    /* Shrink Logs */
+    #log-panel {
+        width: 300px !important;
+        max-height: 250px !important;
+        bottom: 50px !important;
+        right: 10px !important;
+        padding: 10px !important;
+    }
+    #log-panel h3 { font-size: 1.1rem !important; margin-bottom: 5px !important; }
+    #log-content { font-size: 0.85rem !important; }
+    
+    /* Global buttons */
+    .action-btn {
+        padding: 8px 12px !important;
+        font-size: 0.9rem !important;
+    }
+}
+
+/* Very Small Mobile Height */
+@media screen and (max-height: 400px) {
+    #command-panel { transform: translate(-50%, -50%) scale(0.65) !important; }
+    #log-panel { max-height: 150px !important; width: 250px !important; }
+    #marshal-single-card { transform: scale(0.5); margin-bottom: -250px !important; }
+}

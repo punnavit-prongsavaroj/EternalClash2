@@ -23,11 +23,16 @@ public class Game {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "room_code", unique = true, length = 10)
+    private String roomCode;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
+    @Builder.Default
     private GameStatus status = GameStatus.WAITING;
 
     @Column(name = "current_turn_number", nullable = false)
+    @Builder.Default
     private Integer currentTurnNumber = 0;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -43,6 +48,7 @@ public class Game {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Player> players = new ArrayList<>();
 }
 

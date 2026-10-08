@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>EternalClash2</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<!-- Portrait Lock Overlay -->
+<div id="portrait-lock" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #2c3e50; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 20px;">
+    <div style="font-size: 5rem; margin-bottom: 20px; animation: rotatePhone 2s infinite ease-in-out;">🔄</div>
+    <h1 style="color: #f39c12; margin-bottom: 10px;">กรุณาหมุนจอเป็นแนวนอน</h1>
+    <p style="font-size: 1.2rem;">เกมนี้ออกแบบมาเพื่อเล่นในแนวนอนเท่านั้น (Landscape)</p>
+</div>
+
+
+    <!-- ระบบ BGM -->
+    <audio id="bg-music" loop>
+    <audio id="click-sfx"><source src="/sound/click.mp3" type="audio/mpeg"></audio>
+    <audio id="farm-sfx"><source src="/sound/farm.mp3" type="audio/mpeg"></audio>
+    <audio id="recruit-sfx"><source src="/sound/recruit.mp3" type="audio/mpeg"></audio>
+    <audio id="attack-sfx"><source src="/sound/attack.mp3" type="audio/mpeg"></audio>
+    <audio id="event-sfx"><source src="/sound/event.mp3" type="audio/mpeg"></audio>
+    <audio id="battle-sfx"><source src="/sound/battle.mp3" type="audio/mpeg"></audio>
+    <audio id="farm-sfx"><source src="/sound/farm.mp3" type="audio/mpeg"></audio>
+    <audio id="recruit-sfx"><source src="/sound/recruit.mp3" type="audio/mpeg"></audio>
+    <audio id="attack-sfx"><source src="/sound/attack.mp3" type="audio/mpeg"></audio>
+
+        <source src="/sound/menu_bgm.mp3" type="audio/mpeg">
+    </audio>
+    <button id="music-toggle" onclick="toggleMusic()" style="position: fixed; top: 20px; right: 20px; z-index: 1000; background: rgba(0,0,0,0.7); color: white; border: 2px solid #f39c12; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-size: 1.5rem; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+        🔊
+    </button>
+
+    <!-- หน้าแรก: ตั้งชื่อ -->
+    <div id="login-screen" class="screen">
+        <video autoplay muted loop playsinline id="bg-video">
+            <source src="/gif/1004.mp4" type="video/mp4">
+            เบราว์เซอร์ของคุณไม่รองรับวิดีโอนี้
+        </video>
+        <h1 class="game-title">EternalClash2</h1>
+        <div class="login-container">
+            <p>กรุณาตั้งชื่อขุนพลของคุณ</p>
+            <input type="text" id="player-name-input" placeholder="ใส่ชื่อของคุณที่นี่..." autocomplete="off">
+            <button onclick="joinLobby()">เข้าสู่สนามรบ</button>
+        </div>
+    </div>
+
+    <!-- หน้าสร้างห้อง (Lobby) -->
+    <div id="lobby-screen" class="screen" style="display: none;">
+        <div class="lobby-bg"></div>
+        <div class="lobby-character-container">
+            <div class="half-screen left-half">
+                <img src="/gif/jocho.png" class="character-img" alt="Jocho">
+            </div>
+            <div class="half-screen right-half">
+                <img src="/gif/kongming.png" class="character-img" alt="Kongming">
+            </div>
+        </div>
+        <button class="logout-btn" onclick="logout()">ออกจากระบบ</button>
+        <div class="player-name-display">
+            ท่านขุนพล: <span id="display-name" class="highlight"></span>
+        </div>
+        <div class="bottom-actions">
+            <button class="action-btn create-btn" onclick="createRoom()">สร้างห้อง</button>
+            <button class="action-btn join-btn" onclick="showJoinPopup()">เข้าร่วมห้อง</button>
+        </div>
+        <div id="join-popup" class="popup-overlay" style="display: none;">
+            <div class="popup-box glass-panel">
+                <h2 style="color: #f39c12; margin-bottom: 20px;">เข้าร่วมห้อง</h2>
+                <input type="text" id="room-code-input" placeholder="กรอกรหัสห้อง..." autocomplete="off">
+                <div class="popup-buttons">
+                    <button class="action-btn join-btn" onclick="joinRoom()">ยืนยัน</button>
+                    <button class="action-btn cancel-btn" onclick="closeJoinPopup()">ยกเลิก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- หน้าห้องเตรียมพร้อม (Room Screen) -->
+    <div id="room-screen" class="screen" style="display: none;">
+        <div class="lobby-bg"></div>
+        <button class="logout-btn" onclick="leaveRoom()">ออกจากห้อง</button>
+        <div class="glass-panel" style="padding: 40px; text-align: center; border-radius: 12px; margin-top: 100px;">
+            <h2 style="color: #f39c12; font-size: 2rem; margin-bottom: 20px;">ห้องรหัส: <span id="current-room-id"></span></h2>
+            <p style="color: white; font-size: 1.2rem; margin-bottom: 10px;">ขุนพลของคุณ: <span id="current-player-name" class="highlight"></span></p>
+            <p style="color: #bdc3c7; font-size: 1rem; margin-bottom: 30px;">รอหัวหน้าห้องกดเริ่มเกม...</p>
+            <div id="room-players-list" style="color: white; text-align: left; margin-bottom: 20px; font-size: 1.1rem;">
+            </div>
+            <button class="action-btn create-btn" onclick="startGame()">เริ่มเกม</button>
+        </div>
+    </div>
+
+    <!-- หน้าเลือกขุนพล (Draft Screen) -->
+    <div id="draft-screen" class="screen" style="display: none;">
+        <div class="lobby-bg"></div>
+        <div class="glass-panel" style="padding: 40px; text-align: center; border-radius: 12px; width: 80%; max-width: 900px; margin-top: 50px; z-index: 10;">
+            
+            <h2 style="color: #f39c12; font-size: 2.5rem; margin-bottom: 25px;">เลือกขุนพลคู่กาย</h2>
+            <div id="marshal-single-card" class="marshal-card" style="margin: 0 auto; width: 350px; height: 500px; padding: 0; overflow: hidden; position: relative; border: 4px solid #f39c12; border-radius: 12px; cursor: default; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+            </div>
+            <div id="draft-buttons-wrapper" style="margin-top: 30px; display: flex; justify-content: center; gap: 20px;">
+                  <button class="action-btn produce-btn" onclick="confirmMarshal()">✅ เลือกขุนพลคนนี้</button>
+                <button class="action-btn attack-btn" onclick="rerollMarshal()">🔄 สุ่มเปลี่ยนคนใหม่</button>
+            </div>
+            <div id="draft-waiting" style="display: none; margin-top: 30px; color: #f39c12; font-size: 1.5rem;">
+                รอผู้เล่นอื่นเลือกขุนพล...
+            </div>
+        </div>
+    </div>
+
+    <!-- หน้าจอสมรภูมิหลัก (Game Screen) -->
+    <div id="game-screen" class="screen" style="display: none;">
+        <!-- พื้นหลังหลัก (จะเปลี่ยนภาพด้วย JS ตามฤดู/เวลา) -->
+        <div id="dynamic-map-bg" class="lobby-bg" style="z-index: 0;"></div>
+        
+        <!-- แผนที่แบบเต็มจอ สำหรับวางปราสาท -->
+        <div id="castles-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5;">
+            <!-- ปราสาทจะถูกวาดที่นี่ด้วย JS -->
+        </div>
+
+        <div class="game-dashboard" style="pointer-events: none;">
+            <!-- แถบด้านบน: ข้อมูลเมืองและเทิร์น -->
+            <div class="top-bar glass-panel" style="pointer-events: auto;">
+                <div class="turn-info">
+                    <h2 id="current-turn-display" style="color: #f39c12; font-size: 1.8rem; margin: 0;">เทิร์นที่: -</h2>
+                </div>
+                <div class="player-resources">
+                    <div class="resource-item">ขุนพล: <span id="ui-marshal" class="highlight">-</span></div>
+                    <div class="resource-item">🏰 เมือง: <span id="ui-city-name" class="highlight">-</span></div>
+                    <div class="resource-item">🌾 เสบียง: <span id="ui-food" class="highlight">0</span></div>
+                    <div class="resource-item">⚔️ ทหาร: <span id="ui-soldiers" class="highlight">0</span></div>
+                </div>
+            </div>
+
+            <div class="main-battlefield" style="justify-content: flex-start;">
+                <!-- แผงคำสั่ง (ซ้าย) -->
+                <div id="command-panel" class="command-panel glass-panel" style="pointer-events: auto; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20;">
+                    <h3 style="color: #f39c12; text-align: center; margin-bottom: 20px; font-size: 1.5rem;">ออกคำสั่งประจำเทิร์น</h3>
+                    <div id="action-buttons-container">
+                        <button class="action-btn produce-btn" onclick="submitAction('PRODUCE_FOOD')">🌾 ทำฟาร์ม (เพิ่มเสบียง)</button>
+                        <button class="action-btn recruit-btn" onclick="submitAction('RECRUIT_SOLDIERS')">⚔️ เกณฑ์ทหาร (ใช้เสบียง)</button>
+                        <button class="action-btn attack-btn" onclick="openAttackModal()">🚀 ส่งกองทัพโจมตี</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        <!-- Manual UI -->
+        <button class="action-btn" style="position: absolute; bottom: 20px; right: 200px; z-index: 15; background: #2980b9; padding: 10px 20px; font-size: 1.1rem; width: auto;" onclick="toggleManual()">📖 คู่มือการเล่น</button>
+        <div id="manual-panel" class="glass-panel" style="display: none; position: fixed; top: 5vh; left: 5vw; width: 90vw; height: 90vh; z-index: 1000; flex-direction: column; padding: 20px; background: rgba(20, 25, 30, 0.98); border: 2px solid #f39c12; box-shadow: 0 0 50px rgba(0,0,0,0.8);">
+            
+            <button onclick="toggleManual()" style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); border: 1px solid #7f8c8d; color: white; width: 35px; height: 35px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 1010; transition: background 0.2s;" onmouseover="this.style.background='#c0392b'" onmouseout="this.style.background='rgba(0,0,0,0.6)'">✖</button>
+            
+            <div style="margin-bottom: 20px; text-align: center; position: relative;">
+                <h3 style="color: #f39c12; margin: 0; font-size: 1.8rem; letter-spacing: 1px;">คู่มือการเล่น (หน้า <span id="manual-page-num">1</span>/12)</h3>
+            </div>
+            
+            <div style="flex: 1; position: relative; background: rgba(0,0,0,0.5); border-radius: 12px; padding: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                
+                <button onclick="prevManualPage()" style=" left: 10px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: rgba(255,255,255,0.4); font-size: 3.5rem; font-weight: 100; cursor: pointer; padding: 10px 20px; transition: 0.2s; z-index: 10;" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">❮</button>
+                
+                <img id="manual-image" src="/img/manual/page_1.jpg" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.5);" alt="รอใส่รูปคู่มือ">
+                
+                <button onclick="nextManualPage()" style=" right: 10px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: rgba(255,255,255,0.4); font-size: 3.5rem; font-weight: 100; cursor: pointer; padding: 10px 20px; transition: 0.2s; z-index: 10;" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">❯</button>
+                
+            </div>
+        </div>
+        
+        <!-- Log UI -->
+        <button class="action-btn" style="position: absolute; bottom: 20px; right: 20px; z-index: 15; background: #34495e; padding: 10px 20px; font-size: 1.1rem; width: auto;" onclick="toggleLog()">📜 บันทึกสงคราม</button>
+        <div id="log-panel" class="glass-panel" style="display: none; position: absolute; bottom: 70px; right: 20px; width: 350px; max-height: 400px; z-index: 15; flex-direction: column; padding: 20px;">
+            <h3 style="color: #f39c12; margin-bottom: 10px; text-align: center;">เหตุการณ์ล่าสุด</h3>
+            <div id="log-content" style="flex: 1; overflow-y: auto; color: white; font-size: 1rem; text-align: left; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 8px; min-height: 200px;">
+                <p style="color: #bdc3c7;"><i>ยังไม่มีเหตุการณ์...</i></p>
+            </div>
+        </div>
+        
+        <!-- Attack Modal -->
+        <div id="attack-modal" class="popup-overlay" style="display: none; z-index: 20; pointer-events: auto;">
+            <div class="popup-box glass-panel">
+                <h2 style="color: #e74c3c; margin-bottom: 15px;">ส่งกองทัพ</h2>
+                <div style="margin: 20px 0; text-align: left;">
+                    <label style="color: white; display: block; margin-bottom: 10px;">เป้าหมาย:</label>
+                    <select id="attack-target" style="width: 100%; padding: 10px; border-radius: 8px; font-size: 1.1rem;"></select>
+                </div>
+                <div style="margin: 20px 0; text-align: left;">
+                    <label style="color: white; display: block; margin-bottom: 10px;">จำนวนทหาร:</label>
+                    <input type="number" id="attack-soldiers" min="1" value="100" style="width: 100%; padding: 10px; border-radius: 8px; font-size: 1.1rem;">
+                </div>
+                <div class="popup-buttons">
+                    <button class="action-btn attack-btn" onclick="confirmAttack()">โจมตี!</button>
+                    <button class="action-btn cancel-btn" onclick="closeAttackModal()">ยกเลิก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/app.js"></script>
+
+    
+    <div id="pre-win-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); z-index: 105;">
+        <h1 style="color: #f1c40f; font-size: 4rem; margin-bottom: 20px;">สงครามจบลงแล้ว!</h1>
+        <button class="action-btn attack-btn" style="font-size: 1.5rem; padding: 20px 40px; box-shadow: 0 0 20px #e74c3c; animation: pulse 1.5s infinite;" onclick="playWinVideo()">🎬 ดูผลลัพธ์การทำศึก</button>
+    </div>
+    <div id="game-over-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black; z-index: 100;">
+        <!-- วิดีโอพื้นหลังที่เล่นครั้งเดียวและค้างที่เฟรมสุดท้าย -->
+        <video id="win-video" style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1;"></video>
+        
+        <!-- UI ที่จะถูกซ่อนไว้ก่อนจนกว่าวิดีโอจะเล่นจบ -->
+        <div id="win-ui" style="display: none; position: relative; z-index: 2; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.4);">
+            <h1 style="color: #f1c40f; font-size: 5rem; text-shadow: 0 0 30px #f39c12; margin-bottom: 20px;">จบสงคราม!</h1>
+            <h2 style="color: white; font-size: 2.5rem; margin-bottom: 10px;">ผู้ชนะรอดชีวิต: <span id="winner-name-display" style="color: #2ecc71;">-</span></h2>
+            <h3 style="color: #f39c12; font-size: 2rem; margin-bottom: 40px; text-shadow: 0 2px 10px rgba(0,0,0,0.8);">ขุนพลคู่กาย: <span id="winner-marshal-display" style="color: white;">-</span></h3>
+            <div style="display: flex; gap: 20px;">
+                <button class="action-btn recruit-btn" style="font-size: 1.2rem; padding: 15px 30px;" onclick="returnToLobby()">🏠 กลับล็อบบี้ (หาห้องใหม่)</button>
+                <button class="action-btn produce-btn" style="font-size: 1.2rem; padding: 15px 30px;" onclick="logout()">🚪 กลับหน้าเมนูหลัก</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

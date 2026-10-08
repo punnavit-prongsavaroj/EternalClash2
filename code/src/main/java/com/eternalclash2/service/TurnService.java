@@ -3,7 +3,7 @@ package com.eternalclash2.service;
 import com.eternalclash2.domain.entity.Game;
 import com.eternalclash2.domain.entity.Player;
 import com.eternalclash2.domain.enums.GameStatus;
-import com.eternalclash2.domain.service.GameClock;
+import com.eternalclash2.service.GameClock;
 import com.eternalclash2.exception.BusinessLogicException;
 import com.eternalclash2.exception.ResourceNotFoundException;
 import com.eternalclash2.repository.GameRepository;
@@ -30,7 +30,10 @@ public class TurnService {
     public Game resolveAndAdvance(Long gameId) {
         Game game = gameRepository.findByIdForUpdate(gameId)
                 .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
-        if (game.getStatus() != GameStatus.IN_PROGRESS) throw new BusinessLogicException("Game is not in progress");
+                
+        // --- ใช้ State Pattern เช็คสถานะเกม ---
+        new com.eternalclash2.state.GameStateContext(game.getStatus()).getCurrentState().validateTurnResolution();
+
         int currentTurn = game.getCurrentTurnNumber();
         List<Player> alivePlayers = playerRepository.findByGame_IdOrderById(gameId).stream()
                 .filter(p -> Boolean.TRUE.equals(p.getIsAlive())).toList();

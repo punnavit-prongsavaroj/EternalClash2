@@ -13,8 +13,13 @@ import com.eternalclash2.exception.ResourceNotFoundException;
 import com.eternalclash2.repository.ArmyRepository;
 import com.eternalclash2.repository.BattleRepository;
 import com.eternalclash2.repository.CityRepository;
+import com.eternalclash2.repository.GameEventRepository;
+import com.eternalclash2.domain.entity.GameEvent;
+import com.eternalclash2.domain.enums.EventType;
+import com.eternalclash2.domain.enums.LocationType;
 import com.eternalclash2.repository.GameRepository;
 import com.eternalclash2.repository.PlayerRepository;
+import com.eternalclash2.strategy.CombatContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +37,7 @@ public class BattleService {
     private final CityRepository cityRepository;
     private final PlayerRepository playerRepository;
     private final GameRepository gameRepository;
+    private final GameEventRepository gameEventRepository;
 
     @Transactional
     public void resolveTurnBattles(Long gameId, int turnNumber) {
@@ -125,7 +131,16 @@ public class BattleService {
         }
 
         if (defendersBefore == 0 || defenderLosses >= defendersBefore) {
-            boolean survived = hasSpecial(defender, "SURVIVE_DESTRUCTION") && ThreadLocalRandom.current().nextInt(100) < 50;
+            boolean survived = new CombatContext(defender).executeSurvival();
+            
+            // แจ้งเตือนถ้ารอดจากความตายได้ด้วยสกิลแม่ทัพ (เช่น ขงเบ้ง)
+            if (survived && defender.getMarshal() != null && "SURVIVE_DESTRUCTION".equals(defender.getMarshal().getSpecialAbilityType())) {
+                gameEventRepository.save(GameEvent.builder().game(defender.getGame()).turnNumber(turnNumber)
+                        .eventType(EventType.REBELLION).affectedPlayer(defender).locationType(LocationType.IN_CITY)
+                        .foodImpact(0).soldierImpact(0).extraTravelTurns(0)
+                        .description("ปาฏิหาริย์! กลยุทธ์ขงเบ้งทำให้เมืองรอดพ้นจากการถูกทำลายอย่างหวุดหวิด!").build());
+            }
+            
             if (!survived) eliminatePlayer(defender, turnNumber);
             for (Battle battle : battleRepository.findByGame_IdAndTurnNumberAndDefenderPlayer_IdAndBattleType(
                     gameId, turnNumber, targetId, BattleType.CITY_SIEGE)) {
@@ -151,13 +166,7 @@ public class BattleService {
     }
 
     private int kills(Player player, int soldiers) {
-        double ratio = player.getMarshal() == null || player.getMarshal().getAttackKillRatio() == null
-                ? 1.0 : player.getMarshal().getAttackKillRatio();
-        return Math.max(0, (int) Math.floor(soldiers * ratio));
-    }
-
-    private boolean hasSpecial(Player player, String type) {
-        return player.getMarshal() != null && type.equals(player.getMarshal().getSpecialAbilityType());
+        return new CombatContext(player).executeKills(player, soldiers);
     }
 
     @Transactional(readOnly = true)
