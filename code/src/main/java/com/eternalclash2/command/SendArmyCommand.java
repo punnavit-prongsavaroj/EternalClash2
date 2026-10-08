@@ -39,13 +39,13 @@ public class SendArmyCommand implements PlayerActionCommand {
         if (targetPlayerId == null || soldierCount == null) {
             throw new BusinessLogicException("Target and soldier count are required to send an army");
         }
-        if (hasSpecial(player, "SURVIVE_DESTRUCTION") && ThreadLocalRandom.current().nextInt(100) < 20) {
+        if (hasSpecial(player, "SURVIVE_DESTRUCTION") && ThreadLocalRandom.current().nextInt(100) < 10) {
             recordedAction = ActionType.NONE;
             // สร้าง Event แจ้งเตือนผู้เล่นว่าโดนสกิลขัดขวาง
             if (gameEventRepository != null) {
                 gameEventRepository.save(GameEvent.builder().game(game).turnNumber(turn).eventType(EventType.REBELLION)
                         .affectedPlayer(player).locationType(LocationType.IN_CITY).foodImpact(0).soldierImpact(0)
-                        .extraTravelTurns(0).description("ขงเบ้งลังเล! กองทัพไม่ได้ถูกส่งออกไป (เสีย Action)").build());
+                        .extraTravelTurns(0).description("ทหารไม่ฟัง! กองทัพไม่ได้ถูกส่งออกไป (เสีย Action)").build());
             }
         } else {
             army = armyService.sendArmy(player.getId(), targetPlayerId, soldierCount, turn);
