@@ -695,6 +695,7 @@ async function updateLog(snapshot) {
                 let popupTexts = events.map(e => {
                     let name = EVENT_THAI_NAMES[e.eventType] || e.eventType;
                     if (e.description && e.description.includes("ขงเบ้ง")) name = "กลยุทธ์ขงเบ้งทำงาน!";
+                    if (e.description && e.description.includes("ประกาศศึก")) name = "⚔️ ประกาศสงครามอย่างเป็นธรรม!";
                     return name;
                 });
                 let hasNewArmy = false;
@@ -730,6 +731,8 @@ async function updateLog(snapshot) {
                     let evName = EVENT_THAI_NAMES[ev.eventType] || ev.eventType;
                     if (ev.description && ev.description.includes("ขงเบ้ง")) {
                         evName = "กลยุทธ์ขงเบ้งทำงาน!";
+                    } else if (ev.description && ev.description.includes("ประกาศศึก")) {
+                        evName = "⚔️ ประกาศสงครามอย่างเป็นธรรม!";
                     }
                     let targetName = "";
                     if (ev.affectedPlayerId) {
@@ -792,9 +795,60 @@ if(battles.length > 0) playSound('battle-sfx');
     document.getElementById('log-panel').style.display = 'flex';
 }
 
+// --- ระบบคู่มือการเล่น (Manual) ---
+let currentManualPage = 1;
+const totalManualPages = 12;
+
+function toggleManual() {
+    const manualPanel = document.getElementById('manual-panel');
+    if (manualPanel.style.display === 'none' || manualPanel.style.display === '') {
+        manualPanel.style.display = 'flex';
+        // ปิด log ถ้าเปิดอยู่
+        const logPanel = document.getElementById('log-panel');
+        if (logPanel && logPanel.style.display !== 'none') {
+            logPanel.style.display = 'none';
+        }
+        playSound('click-sfx');
+    } else {
+        manualPanel.style.display = 'none';
+        playSound('click-sfx');
+    }
+}
+
+function prevManualPage() {
+    if (currentManualPage > 1) {
+        currentManualPage--;
+        updateManualView();
+        playSound('click-sfx');
+    }
+}
+
+function nextManualPage() {
+    if (currentManualPage < totalManualPages) {
+        currentManualPage++;
+        updateManualView();
+        playSound('click-sfx');
+    }
+}
+
+function updateManualView() {
+    document.getElementById('manual-page-num').innerText = currentManualPage;
+    document.getElementById('manual-image').src = '/img/manual/page_' + currentManualPage + '.jpg';
+}
+
+// --- ระบบเปิดปิด Log (Modified) ---
 function toggleLog() {
-    const panel = document.getElementById('log-panel');
-    panel.style.display = (panel.style.display === 'none' || panel.style.display === '') ? 'flex' : 'none';
+    const logPanel = document.getElementById('log-panel');
+    if (logPanel.style.display === 'none' || logPanel.style.display === '') {
+        logPanel.style.display = 'flex';
+        // ปิด manual ถ้าเปิดอยู่
+        const manualPanel = document.getElementById('manual-panel');
+        if (manualPanel && manualPanel.style.display !== 'none') {
+            manualPanel.style.display = 'none';
+        }
+    } else {
+        logPanel.style.display = 'none';
+    }
 }
 
 function openAttackModal() { document.getElementById('attack-modal').style.display = 'flex'; }
