@@ -19,7 +19,7 @@ const EVENT_THAI_NAMES = {
 
 const MARSHAL_WIN_VIDEOS = {
     'ขงเบ้ง': 'kongming.mp4',
-    'จูล่ง': 'jurong.mp4',
+    'จูล่ง': 'julong.mp4',
     'จิวยี่': 'jilyi.mp4',
     'โจโฉ': 'josho.mp4',
     'เล่าปี่': 'laopi.mp4',
@@ -316,11 +316,34 @@ function handleSnapshot(snapshot) {
             document.getElementById('draft-screen').style.display = 'flex';
         }
         updateDraftUI(snapshot);
+    } else if (snapshot.status === 'PLACEMENT') {
+        if (lastStatus !== 'PLACEMENT') {
+            lastStatus = 'PLACEMENT';
+            playCloudTransition(() => {
+                hideAllScreens();
+                document.getElementById('game-screen').style.display = 'flex';
+                document.getElementById('placement-panel').style.display = 'flex';
+                document.getElementById('command-panel').style.display = 'none';
+                
+                const bgMusic = document.getElementById('bg-music');
+                if (bgMusic && bgMusic.src && bgMusic.src.includes('menu_bgm.mp3')) {
+                    bgMusic.src = '/sound/game_bgm.mp3';
+                    if (typeof isMusicPlaying !== 'undefined' && isMusicPlaying) {
+                        bgMusic.play().catch(e => console.log(e));
+                    }
+                }
+                updateGameUI(snapshot);
+            });
+        } else {
+            updateGameUI(snapshot);
+        }
     } else if (snapshot.status === 'IN_PROGRESS') {
         const doGameUpdate = () => {
             if (snapshot.currentTurn !== lastTurn) {
                 mySubmitted = false;
                 document.getElementById('command-panel').style.display = 'flex';
+                const pp = document.getElementById('placement-panel');
+                if (pp) pp.style.display = 'none';
                 
                 if (lastTurn > 0) {
                     updateLog(snapshot);
@@ -335,6 +358,9 @@ function handleSnapshot(snapshot) {
             playCloudTransition(() => {
                 hideAllScreens();
                 document.getElementById('game-screen').style.display = 'flex';
+                const pp = document.getElementById('placement-panel');
+                if (pp) pp.style.display = 'none';
+                document.getElementById('command-panel').style.display = 'flex';
                 
                 const bgMusic = document.getElementById('bg-music');
                 if (bgMusic && bgMusic.src && bgMusic.src.includes('menu_bgm.mp3')) {
@@ -349,7 +375,6 @@ function handleSnapshot(snapshot) {
             return;
         }
         
-        // ถ้าเป็นการเปลี่ยนเทิร์นใหม่ ให้เรียกเมฆเสมอ!
         if (lastTurn > 0 && snapshot.currentTurn !== lastTurn) {
             playCloudTransition(() => {
                 doGameUpdate();
@@ -357,19 +382,17 @@ function handleSnapshot(snapshot) {
             return;
         }
         
-        // อัปเดตปกติเมื่ออยู่ในเทิร์นเดิม
         doGameUpdate();
 
     } else if (snapshot.status === 'FINISHED') {
         if (lastStatus !== 'FINISHED') {
             lastStatus = 'FINISHED';
             hideAllScreens();
-            document.getElementById('game-over-screen').style.display = 'block'; // เปลี่ยนจาก flex เป็น block เพื่อให้ UI ข้างในจัดการกันเอง
-            document.getElementById('win-ui').style.display = 'none'; // ซ่อน UI
+            document.getElementById('game-over-screen').style.display = 'block';
+            document.getElementById('win-ui').style.display = 'none';
             
             if(pollingInterval) clearInterval(pollingInterval);
             
-            // ปิดเพลงฉาก
             const bgMusic = document.getElementById('bg-music');
             if (bgMusic) bgMusic.pause();
             
@@ -378,9 +401,6 @@ function handleSnapshot(snapshot) {
                 document.getElementById('winner-name-display').innerText = winner.name;
                 document.getElementById('winner-marshal-display').innerText = winner.marshalName || 'ไม่ได้เลือก';
                 
-
-                
-                // เล่นวิดีโอ
                 const winVideo = document.getElementById('win-video');
                 const videoFile = MARSHAL_WIN_VIDEOS[winner.marshalName];
                 if (videoFile && winVideo) {
@@ -434,7 +454,6 @@ async function updateDraftUI(snapshot) {
     const playerId = parseInt(localStorage.getItem('eternalClashPlayerId'));
     const me = snapshot.players.find(p => p.playerId === playerId);
     
-    // เรียงตาม ID หรือดูจากใครที่ยังไม่มี marshalName เป็นคนแรก
     const currentDraftPlayer = snapshot.players.find(p => !p.marshalName);
     
     const card = document.getElementById('marshal-single-card');
@@ -450,12 +469,10 @@ async function updateDraftUI(snapshot) {
     }
     
     if (currentDraftPlayer && currentDraftPlayer.playerId === playerId) {
-        // ตาของฉัน!
         card.style.display = 'block';
         btnWrapper.style.display = 'flex';
         waitMsg.style.display = 'none';
         
-        // โหลดข้อมูลถ้ายังไม่แสดง
         if (!card.innerHTML.includes('จุดเด่น')) {
             const res = await fetch(API_BASE_URL + '/players/' + playerId + '/marshal-candidates');
             if(res.ok) {
@@ -464,7 +481,6 @@ async function updateDraftUI(snapshot) {
             }
         }
     } else if (currentDraftPlayer) {
-        // ตาคนอื่น
         card.style.display = 'none';
         btnWrapper.style.display = 'none';
         waitMsg.style.display = 'block';
@@ -474,7 +490,7 @@ async function updateDraftUI(snapshot) {
 
 async function rerollMarshal() {
     const btnWrapper = document.getElementById('draft-buttons-wrapper');
-    if (btnWrapper) btnWrapper.style.display = 'none'; // Optimistic Update
+    if (btnWrapper) btnWrapper.style.display = 'none';
 
     try {
         const playerId = localStorage.getItem('eternalClashPlayerId');
@@ -498,7 +514,6 @@ async function confirmMarshal() {
     const wrapper = document.getElementById('draft-buttons-wrapper');
     const waiting = document.getElementById('draft-waiting');
     
-    // Optimistic Update
     if (card) card.style.display = 'none';
     if (wrapper) wrapper.style.display = 'none';
     if (waiting) {
@@ -516,7 +531,6 @@ async function confirmMarshal() {
                 waiting.innerHTML = 'ท่านเลือก <strong style="color:white">' + m.name + '</strong> แล้ว<br>กำลังรอผู้เล่นอื่น...';
             }
         } else {
-            // Revert if failed
             if (card) card.style.display = 'block';
             if (wrapper) wrapper.style.display = 'flex';
             if (waiting) waiting.style.display = 'none';
@@ -532,12 +546,11 @@ async function confirmMarshal() {
 
 function renderDraftCard(m) {
     const card = document.getElementById('marshal-single-card');
-    const imgName = MARSHAL_IMGS[m.name] || 'Jo-Sho.jpg'; // fallback
+    const imgName = MARSHAL_IMGS[m.name] || 'Jo-Sho.jpg';
     
     card.innerHTML = 
         '<img src="/Marshal/' + imgName + '" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; z-index: 1;">' +
-        '<div style="position: absolute; top: 0; left: 0; width: 100%; padding: 25px 15px 40px; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0.5) 60%, transparent); z-index: 2; box-sizing: border-box; text-align: center;">' +
-        '</div>' +
+        '<div style="position: absolute; top: 0; left: 0; width: 100%; padding: 25px 15px 40px; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0.5) 60%, transparent); z-index: 2; box-sizing: border-box; text-align: center;"></div>' +
         '<div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 50px 20px 20px; background: linear-gradient(to top, rgba(0,0,0,1) 10%, rgba(0,0,0,0.85) 60%, transparent); z-index: 2; box-sizing: border-box; text-align: center;">' +
             '<h3 style="font-size: 2.8rem; margin-bottom: 12px; color: #f39c12; text-shadow: 2px 2px 4px #000; letter-spacing: 2px;">' + m.name + '</h3>' +
             '<p style="font-size: 1.05rem; color: #2ecc71; text-shadow: 1px 1px 3px #000; margin-bottom: 6px;">✅ จุดเด่น: ' + (m.abilityDescription || 'ไม่มี') + '</p>' +
@@ -547,12 +560,12 @@ function renderDraftCard(m) {
 
 // ----- GAME PHASE -----
 let lastActionMap = {};
+let selectedCityIdForAction = null; // Store which city is currently selected for taking an action
 
 function updateGameUI(snapshot) {
-    // ฤดูกาล / กลางวันกลางคืน
     const bgMap = document.getElementById('dynamic-map-bg');
     let bgUrl = '';
-    const seasonId = snapshot.season.toLowerCase();
+    const seasonId = snapshot.season ? snapshot.season.toLowerCase() : 'summer';
     const isDay = snapshot.daytime;
     
     if(seasonId === 'summer') {
@@ -570,111 +583,271 @@ function updateGameUI(snapshot) {
     let seasonTh = seasonId === 'summer' ? 'ฤดูร้อน' : (seasonId === 'rainy' ? 'ฤดูฝน' : 'ฤดูหนาว');
     document.getElementById('current-turn-display').innerText = 'เทิร์นที่: ' + snapshot.currentTurn + ' (' + seasonTh + ' - ' + (isDay ? 'กลางวัน' : 'กลางคืน') + ')';
     
-    // อัปเดตเมืองผู้เล่น
+    // Update player top bar stats (aggregate of all their cities)
+    const myPlayerId = parseInt(localStorage.getItem('eternalClashPlayerId'));
+    const me = snapshot.players.find(p => p.playerId === myPlayerId);
+    if (me) {
+        document.getElementById('ui-marshal').innerText = me.marshalName || '-';
+        document.getElementById('ui-city-name').innerText = me.name;
+        
+        let totalFood = 0;
+        let totalSoldiers = 0;
+        let myNodes = snapshot.nodes.filter(n => n.ownerId === myPlayerId);
+        myNodes.forEach(n => {
+            if (n.food != null) totalFood += n.food;
+            if (n.soldiers != null) totalSoldiers += n.soldiers;
+        });
+        
+        document.getElementById('ui-food').innerText = totalFood;
+        document.getElementById('ui-soldiers').innerText = totalSoldiers;
+        
+        if (snapshot.status === 'IN_PROGRESS') {
+            if (selectedCityIdForAction) {
+                const selectedNode = snapshot.nodes.find(n => n.nodeId === selectedCityIdForAction);
+                if (!selectedNode || selectedNode.actionUsedThisTurn || selectedNode.ownerId !== myPlayerId) {
+                    selectedCityIdForAction = null;
+                    document.getElementById('command-panel').style.display = 'none';
+                } else {
+                    document.getElementById('command-panel').style.display = 'flex';
+                }
+            } else {
+                document.getElementById('command-panel').style.display = 'none';
+            }
+        }
+    }
+    
+    // Render Edges First
+    const edgesContainer = document.getElementById('edges-container');
+    if (edgesContainer) {
+        edgesContainer.innerHTML = '';
+        snapshot.edges.forEach(edge => {
+            const n1 = snapshot.nodes.find(n => n.nodeId === edge.node1Id);
+            const n2 = snapshot.nodes.find(n => n.nodeId === edge.node2Id);
+            
+            if (n1 && n2) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', n1.x + '%');
+                line.setAttribute('y1', n1.y + '%');
+                line.setAttribute('x2', n2.x + '%');
+                line.setAttribute('y2', n2.y + '%');
+                line.setAttribute('stroke', 'rgba(255, 255, 255, 0.4)');
+                line.setAttribute('stroke-width', '4');
+                line.setAttribute('stroke-dasharray', '8 8');
+                edgesContainer.appendChild(line);
+            }
+        });
+    }
+    
+    // Render Nodes
     const container = document.getElementById('castles-container');
     const targetSelect = document.getElementById('attack-target');
     container.innerHTML = '';
     targetSelect.innerHTML = '';
     
-    // จำลองตำแหน่งบนแผนที่ คงที่ตาม ID ผู้เล่น
-    const positions = [
-        { x: 50, y: 80 }, { x: 20, y: 30 }, { x: 80, y: 40 }, { x: 20, y: 70 }, { x: 80, y: 70 }
-    ];
-    
-    snapshot.players.filter(p => p.alive).forEach((player, index) => {
-        if(player.isViewer) {
-            document.getElementById('ui-marshal').innerText = player.marshalName || '-';
-            document.getElementById('ui-city-name').innerText = player.name;
-            document.getElementById('ui-food').innerText = player.food || 0;
-            document.getElementById('ui-soldiers').innerText = player.citySoldiers || 0;
+    snapshot.nodes.forEach(node => {
+        const isMine = node.ownerId === myPlayerId;
+        const owner = snapshot.players.find(p => p.playerId === node.ownerId);
+        
+        const nodeDiv = document.createElement('div');
+        nodeDiv.className = 'castle-node' + (isMine ? ' my-castle' : '');
+        nodeDiv.style.left = node.x + '%';
+        nodeDiv.style.top = node.y + '%';
+        
+        if (node.actionUsedThisTurn) {
+            nodeDiv.style.opacity = '0.5';
+            nodeDiv.style.filter = 'grayscale(50%)';
         }
         
-        const pos = positions[index % positions.length];
-        const node = document.createElement('div');
-        node.className = 'castle-node' + (player.isViewer ? ' my-castle' : '');
-        node.style.left = pos.x + '%';
-        node.style.top = pos.y + '%';
+        let nodeIcon = owner ? '🏰' : '⚪';
+        let nodeName = node.name; // Use the name generated from backend (random historical names or owner)
         
-        const dx = 50 - pos.x;
-        const dy = 50 - pos.y;
-        let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+        let clickHandler = '';
+        if (snapshot.status === 'PLACEMENT') {
+            if (!owner) {
+                clickHandler = `submitPlacement(${node.nodeId})`;
+                nodeDiv.style.cursor = 'pointer';
+            }
+        } else if (snapshot.status === 'IN_PROGRESS') {
+            if (isMine && !node.actionUsedThisTurn) {
+                clickHandler = `selectCityForAction(${node.nodeId})`;
+                nodeDiv.style.cursor = 'pointer';
+                if (selectedCityIdForAction === node.nodeId) {
+                    nodeDiv.style.boxShadow = '0 0 20px 10px #f1c40f';
+                    nodeDiv.style.borderRadius = '50%';
+                }
+            } else if (!isMine) {
+                clickHandler = `openAttackModalForTarget(${node.nodeId})`;
+                nodeDiv.style.cursor = 'crosshair';
+            }
+        }
         
         let radarHTML = '';
-        let showRadar = true;
-        if (!isDay && !player.isViewer) {
-            showRadar = false;
-        }
-        if (showRadar) {
-            // หา incoming armies ไปหา player นี้
-            let armies = snapshot.visibleArmies.filter(a => a.visibleTargetPlayerId === player.playerId);
-            let hasT2 = armies.some(a => (a.arrivalTurn - snapshot.currentTurn) === 2);
-            // กรณีศัตรูประชิดถึงเทิร์นนี้เลย
-            let hasT0 = armies.some(a => (a.arrivalTurn - snapshot.currentTurn) <= 0);
-            let hasT1 = armies.some(a => (a.arrivalTurn - snapshot.currentTurn) === 1);
-            
-            let dot1 = '<div class="dot white"></div>';
-            let dot2 = '<div class="dot white"></div>';
-            
-            if (hasT0) {
-                // ห่าง 0: จุดในแดง จุดนอกขาว
-                dot1 = '<div class="dot red"></div>';
-            } else if (hasT1) {
-                // ห่าง 1: จุดในขาว จุดนอกแดง
-                dot2 = '<div class="dot red"></div>';
+        // Radar dots removed - armies are now drawn on the edges
+        let badgeHTML = '';
+        if (node.soldiers != null) {
+            let badgeColor = '#555';
+            if (owner) {
+                const PLAYER_COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#e67e22', '#1abc9c', '#34495e'];
+                let pIndex = snapshot.players.findIndex(p => p.playerId === owner.playerId);
+                if (pIndex >= 0) badgeColor = PLAYER_COLORS[pIndex % PLAYER_COLORS.length];
             }
-            // ห่าง 2 ขึ้นไป: ขาวคู่ (ไม่เห็น)
-            
-            radarHTML = '<div class="radar-container" style="transform: translateY(-50%) rotate(' + angle + 'deg);">' + dot1 + dot2 + '</div>';
+            let badgeText = `${node.soldiers} ⚔️`;
+            if (isMine && node.food != null) {
+                badgeText = `🌾${node.food} ` + badgeText;
+            }
+            badgeHTML = `<div style="position:absolute; top:-10px; right:-10px; background:${badgeColor}; color:white; font-size:0.8rem; font-weight:bold; padding:2px 6px; border-radius:10px; border:2px solid white; pointer-events:none; z-index:10; white-space:nowrap;">${badgeText}</div>`;
         }
         
-        node.innerHTML = radarHTML +
-            '<div class="castle-icon" style="pointer-events: auto;" onclick="if(!'+player.isViewer+') { document.getElementById(\'attack-target\').value=\''+player.playerId+'\'; openAttackModal(); }">🏰</div>' +
-            '<div class="castle-name">' + player.name + '</div>';
+        nodeDiv.innerHTML = `
+            ${radarHTML}
+            ${badgeHTML}
+            <div class="castle-icon" style="pointer-events: auto;" onclick="${clickHandler}">${nodeIcon}</div>
+            <div class="castle-name">${nodeName}</div>
+        `;
                          
-        container.appendChild(node);
-        if (!player.isViewer) {
-            targetSelect.innerHTML += '<option value="' + player.playerId + '">ตีเมือง: ' + player.name + '</option>';
+        container.appendChild(nodeDiv);
+        
+        if (snapshot.status === 'IN_PROGRESS') {
+            if (node.nodeId !== selectedCityIdForAction) {
+                targetSelect.innerHTML += `<option value="${node.nodeId}">${nodeIcon} ${nodeName}</option>`;
+            }
+        }
+    });
+    
+    // Draw Armies on Edges
+    snapshot.visibleArmies.forEach(army => {
+        const sourceNode = snapshot.nodes.find(n => n.nodeId === army.sourceCityId);
+        const targetNode = snapshot.nodes.find(n => n.nodeId === army.visibleTargetCityId);
+        
+        if (sourceNode && targetNode) {
+            let remaining = army.arrivalTurn - snapshot.currentTurn;
+            let ratio = 0.5;
+            if (remaining === 2) ratio = 0.33;
+            else if (remaining === 1) ratio = 0.66;
+            else if (remaining <= 0) ratio = 0.9;
+            
+            let x = sourceNode.x + (targetNode.x - sourceNode.x) * ratio;
+            let y = sourceNode.y + (targetNode.y - sourceNode.y) * ratio;
+            
+            const owner = snapshot.players.find(p => p.playerId === army.ownerPlayerId);
+            const ownerName = owner ? owner.name : "Unknown";
+            const sourceName = sourceNode.name;
+            
+            // Label format: PlayerName (SourceCity)
+            let label = `${ownerName} (${sourceName})`;
+            if (army.soldiers != null) {
+                label += ` ⚔️${army.soldiers}`;
+            }
+            
+            let badgeColor = '#e74c3c';
+            if (owner) {
+                const PLAYER_COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#e67e22', '#1abc9c', '#34495e'];
+                let pIndex = snapshot.players.findIndex(p => p.playerId === owner.playerId);
+                if (pIndex >= 0) badgeColor = PLAYER_COLORS[pIndex % PLAYER_COLORS.length];
+            }
+            
+            const armyDiv = document.createElement('div');
+            armyDiv.className = 'army-marker';
+            armyDiv.style.position = 'absolute';
+            armyDiv.style.left = x + '%';
+            armyDiv.style.top = y + '%';
+            armyDiv.style.transform = 'translate(-50%, -50%)';
+            armyDiv.style.backgroundColor = badgeColor;
+            armyDiv.style.color = 'white';
+            armyDiv.style.padding = '4px 8px';
+            armyDiv.style.borderRadius = '15px';
+            armyDiv.style.fontSize = '0.75rem';
+            armyDiv.style.fontWeight = 'bold';
+            armyDiv.style.border = '2px solid white';
+            armyDiv.style.zIndex = '5';
+            armyDiv.style.pointerEvents = 'none';
+            armyDiv.style.boxShadow = '0 0 5px rgba(0,0,0,0.5)';
+            armyDiv.innerText = label;
+            
+            container.appendChild(armyDiv);
         }
     });
 }
 
+async function submitPlacement(cityId) {
+    const gameId = localStorage.getItem('eternalClashGameId');
+    const playerId = localStorage.getItem('eternalClashPlayerId');
+    
+    const waitMsg = document.getElementById('placement-waiting-msg');
+    if (waitMsg) waitMsg.style.display = 'block';
+    
+    try {
+        await fetch(API_BASE_URL + '/games/' + gameId + '/placement?playerId=' + playerId + '&cityId=' + cityId, { method: 'POST' });
+    } catch(e) { 
+        alert(e.message); 
+        if (waitMsg) waitMsg.style.display = 'none';
+    }
+}
+
+function selectCityForAction(cityId) {
+    selectedCityIdForAction = cityId;
+    fetchGameState(); 
+}
+
+function openAttackModalForTarget(targetNodeId) {
+    if (!selectedCityIdForAction) {
+        alert("กรุณาคลิกเลือกเมืองของท่านก่อนที่จะสั่งโจมตีเมืองอื่น");
+        return;
+    }
+    document.getElementById('attack-target').value = targetNodeId;
+    openAttackModal();
+}
+
+let isSubmittingAction = false;
+
 async function submitAction(actionType) {
+    if (isSubmittingAction) return;
+    
     const gameId = localStorage.getItem('eternalClashGameId');
     const playerId = localStorage.getItem('eternalClashPlayerId');
     let target = null;
     let soldiers = null;
+    
+    if (!selectedCityIdForAction) {
+        alert("กรุณาเลือกเมืองก่อนออกคำสั่ง!");
+        return;
+    }
     
     if (actionType === 'SEND_ARMY') {
         target = parseInt(document.getElementById('attack-target').value);
         soldiers = parseInt(document.getElementById('attack-soldiers').value);
     }
     
-    // 1. ตอบสนอง UI ทันทีไม่ต้องรอหลังบ้าน (Optimistic Update)
-    mySubmitted = true;
+    isSubmittingAction = true;
     document.getElementById('command-panel').style.display = 'none';
 
     try {
         const res = await fetch(API_BASE_URL + '/games/' + gameId + '/players/' + playerId + '/actions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ actionType: actionType, targetPlayerId: target, soldierCount: soldiers })
+            body: JSON.stringify({ cityId: selectedCityIdForAction, actionType: actionType, targetCityId: target, soldierCount: soldiers })
         });
         
         if (!res.ok) {
             const err = await res.json();
             alert(err.message || 'คำสั่งล้มเหลว');
-            // คืนค่า UI ให้กดใหม่ถ้า Server แจ้งว่าทำไม่ได้ (เช่น ทหารไม่พอ)
-            mySubmitted = false;
             document.getElementById('command-panel').style.display = 'flex';
             return;
         }
         
-        // เราก็บอก Backend ให้ประมวลผลเลยถ้าทุกคนส่งครบ
-        // (ปกติอาจจะให้ server จัดการเอง หรือลองเรียก resolve-turn)
+        selectedCityIdForAction = null; 
+        
+        // Attempt to resolve turn, but silently ignore if not everyone is ready
         await fetch(API_BASE_URL + '/games/' + gameId + '/resolve-turn', { method: 'POST' });
-    } catch(e) { alert(e.message); }
+        
+        // Re-fetch game state to show updated UI
+        fetchGameState();
+    } catch(e) { 
+        console.error(e); 
+    } finally {
+        isSubmittingAction = false;
+    }
 }
-
 async function updateLog(snapshot) {
     const logContent = document.getElementById('log-content');
     if(logContent.innerHTML.includes('ยังไม่มีเหตุการณ์')) logContent.innerHTML = '';
@@ -933,3 +1106,9 @@ document.addEventListener('click', function(e) {
         }
     }
 });
+
+
+function closeCommandPanel() {
+    selectedCityIdForAction = null;
+    document.getElementById('command-panel').style.display = 'none';
+}

@@ -7,7 +7,7 @@ import lombok.*;
 @Entity
 @Table(
     name = "turn_actions",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"game_id", "turn_number", "player_id"})
+    uniqueConstraints = @UniqueConstraint(columnNames = {"game_id", "turn_number", "city_id"})
 )
 @Getter
 @Setter
@@ -30,6 +30,10 @@ public class TurnAction {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "player_id", nullable = false)
     private Player player;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "city_id")
+    private City city;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "action_type", nullable = false, length = 20)
