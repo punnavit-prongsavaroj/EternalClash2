@@ -22,6 +22,7 @@ public class BattleService {
     private final PlayerRepository playerRepository;
     private final GameRepository gameRepository;
     private final GameEventRepository gameEventRepository;
+    private final GameRuleService gameRuleService;
 
     @Transactional
     public void resolveBattles(Long gameId, int turnNumber) {
@@ -36,7 +37,7 @@ public class BattleService {
             resolveArrival(army, turnNumber);
             
             Game game = army.getOwner().getGame();
-            checkWinCondition(game);
+            gameRuleService.checkWinCondition(game);
             if (game.getStatus() == GameStatus.FINISHED) break;
         }
     }
@@ -168,7 +169,7 @@ public class BattleService {
                 }
                 
                 if (defender != null) {
-                    checkPlayerElimination(defender, turnNumber);
+                    gameRuleService.checkPlayerElimination(defender, turnNumber);
                 }
             }
         } else {
@@ -196,27 +197,6 @@ public class BattleService {
                 .attackerSoldiers(attackersBefore).defenderSoldiers(defendersBefore)
                 .attackerCasualties(attackerLosses).defenderCasualties(defenderLosses)
                 .isCityDestroyed(isCityCaptured).result(isCityCaptured ? BattleResult.ATTACKER_WIN : BattleResult.DEFENDER_WIN).build());
-    }
-
-    private void checkPlayerElimination(Player player, int turnNumber) {
-        long citiesOwned = cityRepository.findByGame_Id(player.getGame().getId()).stream()
-                .filter(c -> c.getPlayer() != null && c.getPlayer().getId().equals(player.getId())).count();
-                
-        if (citiesOwned == 0) {
-            player.setIsAlive(false);
-            player.setEliminatedAtTurn(turnNumber);
-            playerRepository.save(player);
-        }
-    }
-
-    private void checkWinCondition(Game game) {
-        List<Player> alive = playerRepository.findByGame_IdOrderById(game.getId()).stream()
-                .filter(p -> Boolean.TRUE.equals(p.getIsAlive())).toList();
-        if (alive.size() <= 1 && game.getStatus() != GameStatus.WAITING && game.getStatus() != GameStatus.PLACEMENT && game.getStatus() != GameStatus.MARSHAL_SELECTION) {
-            game.setStatus(GameStatus.FINISHED);
-            game.setWinner(alive.isEmpty() ? null : alive.get(0));
-            gameRepository.save(game);
-        }
     }
 
     private int kills(Player player, int soldiers) {

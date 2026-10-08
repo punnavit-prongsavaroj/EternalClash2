@@ -10,26 +10,33 @@ import com.eternalclash2.exception.ResourceNotFoundException;
 import com.eternalclash2.repository.CityRepository;
 import com.eternalclash2.repository.MapEdgeRepository;
 import com.eternalclash2.repository.PlayerRepository;
+import com.eternalclash2.repository.GameEventRepository;
+import com.eternalclash2.domain.entity.GameEvent;
+import com.eternalclash2.domain.enums.EventType;
+import com.eternalclash2.domain.enums.LocationType;
+import com.eternalclash2.strategy.marshal.MarshalAbilityContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class CityService {
     private static final int RECRUIT_FOOD_COST = 20;
-    private static final double ZHOU_YU_FOOD_MULTIPLIER = 1.25;
 
     private final CityRepository cityRepository;
     private final PlayerRepository playerRepository;
+    private final PlayerService playerService;
     private final MapEdgeRepository mapEdgeRepository;
+    private final GameEventRepository gameEventRepository;
 
     @Transactional
     public City produceFood(Long cityId, int turnNumber) {
         City city = getCity(cityId);
-        Player player = getPlayer(city.getPlayer().getId());
+        Player player = playerService.getAlivePlayerValidated(city.getPlayer().getId());
         
         int production = player.getMarshal() == null ? 20 : player.getMarshal().getFoodProduction();
         if (GameClock.season(turnNumber) == Season.WINTER) production = (int) Math.floor(production / 2.0);
@@ -48,9 +55,10 @@ public class CityService {
     @Transactional
     public City recruitSoldiers(Long cityId, int turnNumber) {
         City city = getCity(cityId);
-        Player player = getPlayer(city.getPlayer().getId());
+        Player player = playerService.getAlivePlayerValidated(city.getPlayer().getId());
         
-        double multiplier = hasSpecial(player, "NO_ACCIDENT") ? ZHOU_YU_FOOD_MULTIPLIER : 1.0;
+        MarshalAbilityContext context = new MarshalAbilityContext(player);
+        double multiplier = context.getStrategy().getRecruitFoodMultiplier();
         int totalCost = (int) Math.floor(RECRUIT_FOOD_COST * multiplier);
         
         deductFoodFromNetwork(city, totalCost);
@@ -172,16 +180,104 @@ public class CityService {
 
     @Transactional
     public void applySeasonUpkeep(Long gameId) {
-        // Upkeep applies to all cities
         List<City> cities = cityRepository.findByGame_Id(gameId);
+        Set<Long> processedNetworkIds = new HashSet<>();
+        
         for (City city : cities) {
             if (city.getPlayer() == null) continue; // Neutral cities don't starve
+            if (processedNetworkIds.contains(city.getId())) continue;
             
-            int availableFood = Math.max(0, city.getFood());
-            int availableSoldiers = Math.max(0, city.getSoldiers());
-            int casualties = Math.max(0, availableSoldiers - availableFood);
-            city.setSoldiers(availableSoldiers - casualties);
-            city.setFood(Math.max(0, availableFood - availableSoldiers));
+            List<City> network = getConnectedNetwork(city);
+            network.forEach(c -> processedNetworkIds.add(c.getId()));
+            
+            int totalFood = network.stream().mapToInt(City::getFood).sum();
+            int totalSoldiers = network.stream().mapToInt(City::getSoldiers).sum();
+            
+            if (totalFood >= totalSoldiers) {
+                // Enough food in the network
+                int perCityCost = totalSoldiers / network.size();
+                int remainder = totalSoldiers % network.size();
+                
+                // Attempt fair deduction first
+                for (City c : network) {
+                    int toDeduct = perCityCost + (c.getId().equals(city.getId()) ? remainder : 0);
+                    c.setFood(c.getFood() - toDeduct);
+                }
+                
+                // Resolve negative balances
+                while (network.stream().anyMatch(c -> c.getFood() < 0)) {
+                    int debt = 0;
+                    for (City c : network) {
+                        if (c.getFood() < 0) {
+                            debt += -c.getFood();
+                            c.setFood(0);
+                        }
+                    }
+                    
+                    List<City> solventCities = network.stream().filter(c -> c.getFood() > 0).toList();
+                    if (solventCities.isEmpty()) break;
+                    
+                    int splitDebt = debt / solventCities.size();
+                    int debtRemainder = debt % solventCities.size();
+                    
+                    for (int i = 0; i < solventCities.size(); i++) {
+                        City c = solventCities.get(i);
+                        int toDeduct = splitDebt + (i == 0 ? debtRemainder : 0);
+                        c.setFood(c.getFood() - toDeduct);
+                    }
+                }
+            } else {
+                // Not enough food: distribute the total excess food to the cities with deficit proportionally
+                Map<Long, Integer> initialSoldiers = network.stream().collect(Collectors.toMap(City::getId, City::getSoldiers));
+                Map<Long, Integer> initialFood = network.stream().collect(Collectors.toMap(City::getId, City::getFood));
+                
+                int totalExcess = 0;
+                int totalDeficit = 0;
+                List<City> deficitCities = new ArrayList<>();
+                
+                for (City c : network) {
+                    int s = c.getSoldiers();
+                    int f = c.getFood();
+                    if (f >= s) {
+                        totalExcess += (f - s);
+                    } else {
+                        totalDeficit += (s - f);
+                        deficitCities.add(c);
+                    }
+                    c.setFood(0); // All food will be consumed
+                }
+                
+                int remainingExcess = totalExcess;
+                for (int i = 0; i < deficitCities.size(); i++) {
+                    City c = deficitCities.get(i);
+                    int deficit = initialSoldiers.get(c.getId()) - initialFood.get(c.getId());
+                    int share = (int) Math.round((double) deficit / totalDeficit * totalExcess);
+                    if (i == deficitCities.size() - 1) {
+                        share = remainingExcess;
+                    }
+                    share = Math.min(share, remainingExcess);
+                    remainingExcess -= share;
+                    
+                    int casualties = deficit - share;
+                    c.setSoldiers(Math.max(0, c.getSoldiers() - casualties));
+                }
+                
+                // Log starvation events
+                for (City c : network) {
+                    int lost = initialSoldiers.get(c.getId()) - c.getSoldiers();
+                    if (lost > 0) {
+                        gameEventRepository.save(GameEvent.builder()
+                            .game(c.getGame())
+                            .turnNumber(c.getGame().getCurrentTurnNumber())
+                            .eventType(EventType.STARVATION)
+                            .affectedPlayer(c.getPlayer())
+                            .locationType(LocationType.IN_CITY)
+                            .soldierImpact(-lost)
+                            .description("Starvation! " + lost + " soldiers starved at " + c.getName() + " due to lack of food.")
+                            .build());
+                    }
+                }
+            }
         }
         cityRepository.saveAll(cities);
     }
@@ -197,19 +293,8 @@ public class CityService {
     @Transactional
     public City save(City city) { return cityRepository.save(city); }
 
-    private Player getPlayer(Long playerId) {
-        Player player = playerRepository.findById(playerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Player not found with id: " + playerId));
-        if (!Boolean.TRUE.equals(player.getIsAlive())) throw new BusinessLogicException("Eliminated players cannot take actions");
-        return player;
-    }
-
     private City getCity(Long cityId) {
         return cityRepository.findById(cityId)
                 .orElseThrow(() -> new ResourceNotFoundException("City not found: " + cityId));
-    }
-
-    private boolean hasSpecial(Player player, String type) {
-        return player.getMarshal() != null && type.equals(player.getMarshal().getSpecialAbilityType());
     }
 }

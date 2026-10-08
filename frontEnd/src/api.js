@@ -4,7 +4,8 @@ export const EVENT_THAI_NAMES = {
     'SINKHOLE': 'หลุมยุบ', 'SUN_GLARE': 'แสงแดดแสบตา', 'LIGHTNING': 'พายุฟ้าผ่า',
     'AVALANCHE': 'หิมะถล่ม', 'FOOD_SPOILAGE': 'อาหารเน่าเสีย', 'INSECT_DAMAGE': 'แมลงศัตรูพืชบุก',
     'FROSTBITE': 'อากาศหนาวจัด (Frostbite)', 'EPIDEMIC': 'โรคระบาด', 'SLOW': 'ติดพายุ (เดินทางล่าช้า)',
-    'FLOOD': 'น้ำท่วมใหญ่', 'SUNBURN': 'แดดเผา', 'SNOW_COVER': 'พายุหิมะปกคลุม', 'REBELLION': 'กบฏชาวบ้านลุกฮือ'
+    'FLOOD': 'น้ำท่วมใหญ่', 'SUNBURN': 'แดดเผา', 'SNOW_COVER': 'พายุหิมะปกคลุม', 
+    'REBELLION': 'กบฏชาวบ้านลุกฮือ', 'STARVATION': 'ขาดแคลนเสบียง (ทหารอดตาย)'
 };
 
 export const MARSHAL_WIN_VIDEOS = {
