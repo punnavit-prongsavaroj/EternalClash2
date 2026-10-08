@@ -49,6 +49,13 @@ public class SendArmyCommand implements PlayerActionCommand {
             }
         } else {
             army = armyService.sendArmy(player.getId(), targetPlayerId, soldierCount, turn);
+            if (player.getMarshal() != null && Boolean.TRUE.equals(player.getMarshal().getRevealsAttackTarget())) {
+                if (gameEventRepository != null) {
+                    gameEventRepository.save(GameEvent.builder().game(game).turnNumber(turn).eventType(EventType.REBELLION)
+                        .affectedPlayer(army.getTarget()).locationType(LocationType.IN_CITY).foodImpact(0).soldierImpact(0).extraTravelTurns(0)
+                        .description("ประกาศศึก! กองทัพของ " + player.getName() + " กำลังมุ่งหน้าไปโจมตีเมืองของ " + army.getTarget().getName() + " !!").build());
+                }
+            }
         }
     }
 
