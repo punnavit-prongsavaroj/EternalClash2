@@ -341,7 +341,6 @@ function handleSnapshot(snapshot) {
         const doGameUpdate = () => {
             if (snapshot.currentTurn !== lastTurn) {
                 mySubmitted = false;
-                document.getElementById('command-panel').style.display = 'flex';
                 const pp = document.getElementById('placement-panel');
                 if (pp) pp.style.display = 'none';
                 
@@ -607,7 +606,7 @@ function updateGameUI(snapshot) {
                 if (!selectedNode || selectedNode.actionUsedThisTurn || selectedNode.ownerId !== myPlayerId) {
                     selectedCityIdForAction = null;
                     document.getElementById('command-panel').style.display = 'none';
-                } else {
+                } else if (!isSubmittingAction) {
                     document.getElementById('command-panel').style.display = 'flex';
                 }
             } else {
