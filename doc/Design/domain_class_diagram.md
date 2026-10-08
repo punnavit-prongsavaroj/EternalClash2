@@ -13,6 +13,7 @@ classDiagram
         <<enumeration>>
         WAITING
         MARSHAL_SELECTION
+        PLACEMENT
         IN_PROGRESS
         FINISHED
     }
@@ -74,6 +75,16 @@ classDiagram
         +String name
         +Integer food
         +Integer soldiers
+        +Double x
+        +Double y
+        +Boolean actionUsedThisTurn
+    }
+
+    class MapEdge {
+        +Long id
+        +City city1
+        +City city2
+        +Integer distance
     }
 
     class Marshal {
@@ -137,7 +148,7 @@ classDiagram
     Game "1" *-- "*" Battle : has
 
     %% Player & Assets
-    Player "1" -- "1" City : owns
+    Player "1" -- "*" City : owns
     Player "*" --> "1" Marshal : commands
     Player "1" *-- "*" MarshalCandidate : drafts
     

@@ -36,6 +36,12 @@ public class CityService {
         
         city.setFood(city.getFood() + production);
         city.setActionUsedThisTurn(true);
+
+        if (player.getPlayerStats() != null) {
+            player.getPlayerStats().setTotalFoodProduced(player.getPlayerStats().getTotalFoodProduced() + production);
+            playerRepository.save(player);
+        }
+
         return cityRepository.save(city);
     }
 
@@ -54,6 +60,12 @@ public class CityService {
         
         city.setSoldiers(city.getSoldiers() + production);
         city.setActionUsedThisTurn(true);
+
+        if (player.getPlayerStats() != null) {
+            player.getPlayerStats().setTotalSoldiersRecruited(player.getPlayerStats().getTotalSoldiersRecruited() + production);
+            playerRepository.save(player);
+        }
+
         return cityRepository.save(city);
     }
 

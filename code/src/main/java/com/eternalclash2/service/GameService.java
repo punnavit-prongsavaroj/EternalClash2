@@ -4,6 +4,7 @@ import com.eternalclash2.domain.entity.City;
 import com.eternalclash2.domain.entity.MapEdge;
 import com.eternalclash2.domain.entity.Game;
 import com.eternalclash2.domain.entity.Player;
+import com.eternalclash2.domain.entity.PlayerStats;
 import com.eternalclash2.domain.enums.GameStatus;
 import com.eternalclash2.exception.BusinessLogicException;
 import com.eternalclash2.exception.ResourceNotFoundException;
@@ -53,7 +54,9 @@ public class GameService {
         if (game.getStatus() != GameStatus.WAITING) throw new BusinessLogicException("Game is no longer accepting players");
         if (playerName == null || playerName.isBlank()) throw new BusinessLogicException("Player name is required");
         if (playerRepository.countByGame_Id(gameId) >= MAX_PLAYERS) throw new BusinessLogicException("A game can have at most 7 players");
-        Player player = playerRepository.save(Player.builder().game(game).name(playerName.trim()).isAlive(true).rerollCount(0).build());
+        Player player = Player.builder().game(game).name(playerName.trim()).isAlive(true).rerollCount(0).build();
+        PlayerStats stats = PlayerStats.builder().player(player).totalFoodProduced(0).totalSoldiersRecruited(0).totalBattlesFought(0).citiesConquered(0).build();
+        player.setPlayerStats(stats);
         return playerRepository.save(player);
     }
 

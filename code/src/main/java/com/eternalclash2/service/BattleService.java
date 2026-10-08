@@ -68,6 +68,13 @@ public class BattleService {
                     second.setSoldiers(secondBefore - secondLosses);
                     if (first.getSoldiers() <= 0) first.setStatus(ArmyStatus.CANCELLED);
                     if (second.getSoldiers() <= 0) second.setStatus(ArmyStatus.CANCELLED);
+
+                    if (first.getOwner().getPlayerStats() != null) {
+                        first.getOwner().getPlayerStats().setTotalBattlesFought(first.getOwner().getPlayerStats().getTotalBattlesFought() + 1);
+                    }
+                    if (second.getOwner().getPlayerStats() != null) {
+                        second.getOwner().getPlayerStats().setTotalBattlesFought(second.getOwner().getPlayerStats().getTotalBattlesFought() + 1);
+                    }
                     
                     armyRepository.save(first);
                     armyRepository.save(second);
@@ -106,6 +113,14 @@ public class BattleService {
         int attackersBefore = army.getSoldiers();
         
         Player defender = targetCity.getPlayer(); // Can be null if neutral
+
+        if (owner.getPlayerStats() != null) {
+            owner.getPlayerStats().setTotalBattlesFought(owner.getPlayerStats().getTotalBattlesFought() + 1);
+        }
+        if (defender != null && defender.getPlayerStats() != null) {
+            defender.getPlayerStats().setTotalBattlesFought(defender.getPlayerStats().getTotalBattlesFought() + 1);
+        }
+
         int attackerKills = kills(owner, attackersBefore);
         int defenderKills = defender != null ? kills(defender, defendersBefore) : defendersBefore; // Neutral deals 1-to-1 damage
         
@@ -147,6 +162,10 @@ public class BattleService {
                 
                 army.setSoldiers(0);
                 army.setStatus(ArmyStatus.DESTROYED);
+
+                if (owner.getPlayerStats() != null) {
+                    owner.getPlayerStats().setCitiesConquered(owner.getPlayerStats().getCitiesConquered() + 1);
+                }
                 
                 if (defender != null) {
                     checkPlayerElimination(defender, turnNumber);
