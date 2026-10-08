@@ -53,7 +53,7 @@ public class Battle {
     @Column(name = "defender_casualties", nullable = false)
     private Integer defenderCasualties;
 
-    @Column(name = "is_city_destroyed", nullable = false)
+    @Column(name = "is_city_destroyed")
     @Builder.Default
     private Boolean isCityDestroyed = false;
 

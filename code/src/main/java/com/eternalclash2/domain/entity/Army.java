@@ -25,8 +25,12 @@ public class Army {
     private Player owner;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "target_player_id", nullable = false)
-    private Player target;
+    @JoinColumn(name = "source_city_id")
+    private City sourceCity;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "target_city_id")
+    private City targetCity;
 
     @Column(nullable = false)
     private Integer soldiers;

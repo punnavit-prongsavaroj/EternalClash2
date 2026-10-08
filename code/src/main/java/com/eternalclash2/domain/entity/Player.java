@@ -29,7 +29,7 @@ public class Player {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "marshal_id")
     private Marshal marshal;
-
+    
     @Column(name = "is_alive", nullable = false)
     @Builder.Default
     private Boolean isAlive = true;
@@ -44,9 +44,11 @@ public class Player {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+    @Column(name = "starting_city_id")
+    private Long startingCityId;
+
     
-    @OneToOne(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)
-    private City city;
+
 }
 
 

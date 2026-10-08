@@ -30,42 +30,42 @@ import java.util.concurrent.ThreadLocalRandom;
 public class GameEventService {
     private static final int EVENT_CHANCE_PERCENT = 10;
     private static final int REBELLION_CHANCE_PERCENT = 5;
+    
     private final GameEventRepository gameEventRepository;
     private final GameRepository gameRepository;
     private final PlayerRepository playerRepository;
     private final CityRepository cityRepository;
     private final ArmyRepository armyRepository;
 
-    /** Resolves independently for each city and traveling army, as specified in the rules. */
     @Transactional
     public List<GameEvent> processTurn(Long gameId, int turnNumber) {
         Game game = gameRepository.findById(gameId).orElseThrow(() -> new ResourceNotFoundException("Game not found: " + gameId));
         if (game.getStatus() != GameStatus.IN_PROGRESS) return List.of();
         Season season = GameClock.season(turnNumber);
         List<GameEvent> events = new ArrayList<>();
-        List<Player> players = playerRepository.findByGame_IdOrderById(gameId).stream()
-                .filter(p -> Boolean.TRUE.equals(p.getIsAlive())).toList();
-
-        for (Player player : players) {
+        
+        List<City> cities = cityRepository.findByGame_Id(gameId);
+        
+        for (City city : cities) {
+            Player player = city.getPlayer();
+            if (player == null || !Boolean.TRUE.equals(player.getIsAlive())) continue;
+            
             if (hasSpecial(player, "REBELLION") && roll(REBELLION_CHANCE_PERCENT)) {
-                City city = cityRepository.findByPlayer_Id(player.getId()).orElse(null);
-                if (city != null) {
-                    int foodBefore = city.getFood(), soldiersBefore = city.getSoldiers();
-                    city.setFood(Math.max(0, foodBefore / 2));
-                    city.setSoldiers(Math.max(0, soldiersBefore / 2));
-                    cityRepository.save(city);
-                    events.add(save(game, turnNumber, EventType.REBELLION, player, null, LocationType.IN_CITY,
-                            city.getFood() - foodBefore, city.getSoldiers() - soldiersBefore, 0,
-                            "Rebellion halved the city's food and soldiers."));
-                }
+                int foodBefore = city.getFood(), soldiersBefore = city.getSoldiers();
+                city.setFood(Math.max(0, foodBefore / 2));
+                city.setSoldiers(Math.max(0, soldiersBefore / 2));
+                cityRepository.save(city);
+                events.add(save(game, turnNumber, EventType.REBELLION, player, null, LocationType.IN_CITY,
+                        city.getFood() - foodBefore, city.getSoldiers() - soldiersBefore, 0,
+                        "Rebellion halved the city's food and soldiers."));
             }
             if (roll(EVENT_CHANCE_PERCENT)) {
-                GameEvent event = applyCityEvent(game, player, season, turnNumber);
+                GameEvent event = applyCityEvent(game, city, player, season, turnNumber);
                 if (event != null) events.add(event);
             }
         }
 
-        List<Army> armies = armyRepository.findByTarget_Game_IdAndStatus(gameId, ArmyStatus.TRAVELING).stream()
+        List<Army> armies = armyRepository.findByTargetCity_Game_IdAndStatus(gameId, ArmyStatus.TRAVELING).stream()
                 .filter(a -> a.getDepartureTurn() <= turnNumber && a.getSoldiers() > 0).toList();
         for (Army army : armies) {
             if (roll(EVENT_CHANCE_PERCENT)) {
@@ -76,15 +76,16 @@ public class GameEventService {
         return events;
     }
 
-    private GameEvent applyCityEvent(Game game, Player player, Season season, int turn) {
+    private GameEvent applyCityEvent(Game game, City city, Player player, Season season, int turn) {
         List<EventType> choices = new ArrayList<>();
         if (season == Season.RAINY) choices.add(EventType.INSECT_DAMAGE);
         if (season == Season.WINTER) choices.add(EventType.FROSTBITE);
         if (season == Season.RAINY) choices.add(EventType.FLOOD);
         if (season == Season.SUMMER) choices.add(EventType.SUNBURN);
+        if (choices.isEmpty()) return null;
+        
         EventType type = choices.get(ThreadLocalRandom.current().nextInt(choices.size()));
-        City city = cityRepository.findByPlayer_Id(player.getId()).orElse(null);
-        if (city == null) return null;
+        
         int foodImpact = 0, soldierImpact = 0;
         switch (type) {
             case INSECT_DAMAGE -> {
