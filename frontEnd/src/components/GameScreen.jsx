@@ -237,8 +237,11 @@ export default function GameScreen({ gameState, gameId, playerId, isMusicPlaying
                 const city = gameState.nodes.find(n => n.nodeId === selectedCityId);
                 return (
                     <div className="command-panel glass-panel" style={{pointerEvents:'auto', position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', zIndex:20}}>
-                        <button onClick={() => setSelectedCityId(null)} style={{position:'absolute', top:'10px', right:'10px', background:'transparent', border:'none', color:'white', fontSize:'1.5rem', cursor:'pointer'}}>×</button>
-                        <h3 style={{color:'#f39c12', textAlign:'center', marginBottom:'20px', fontSize:'1.5rem'}}>ออกคำสั่งประจำเทิร์น</h3>
+                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px'}}>
+                            <div style={{width: '30px'}}></div>
+                            <h3 style={{color:'#f39c12', textAlign:'center', margin: 0, fontSize:'1.5rem', paddingTop: '5px'}}>ออกคำสั่งประจำเทิร์น</h3>
+                            <button onClick={() => setSelectedCityId(null)} style={{background:'transparent', border:'none', color:'white', fontSize:'2rem', cursor:'pointer', padding: 0, lineHeight: 1, width: '30px', height: '30px', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>×</button>
+                        </div>
                         <p style={{color:'#bdc3c7', textAlign:'center', marginBottom:'15px'}}>{city?.name} | 🌾{city?.food} ⚔️{city?.soldiers}</p>
                         <div id="action-buttons-container">
                             <button className="action-btn produce-btn" onClick={() => doSubmitAction('PRODUCE_FOOD')}>🌾 ทำฟาร์ม (เพิ่มเสบียง)</button>
@@ -294,13 +297,20 @@ export default function GameScreen({ gameState, gameId, playerId, isMusicPlaying
             {/* Manual */}
             <button className="action-btn" style={{position:'absolute', bottom:'20px', right:'200px', zIndex:15, background:'#2980b9', padding:'10px 20px', fontSize:'1.1rem', width:'auto'}} onClick={() => setShowManual(v => !v)}>📖 คู่มือการเล่น</button>
             {showManual && (
-                <div className="glass-panel" style={{display:'flex', position:'fixed', top:'5vh', left:'5vw', width:'90vw', height:'90vh', zIndex:1000, flexDirection:'column', padding:'20px', background:'rgba(20,25,30,0.98)', border:'2px solid #f39c12', boxShadow:'0 0 50px rgba(0,0,0,0.8)'}}>
-                    <button onClick={() => setShowManual(false)} style={{position:'absolute', top:'15px', right:'15px', background:'rgba(0,0,0,0.6)', border:'1px solid #7f8c8d', color:'white', width:'35px', height:'35px', borderRadius:'50%', fontSize:'1.2rem', cursor:'pointer'}}>✖</button>
-                    <div style={{marginBottom:'20px', textAlign:'center'}}><h3 style={{color:'#f39c12', margin:0, fontSize:'1.8rem'}}>คู่มือการเล่น (หน้า {manualPage}/12)</h3></div>
-                    <div style={{flex:1, position:'relative', background:'rgba(0,0,0,0.5)', borderRadius:'12px', padding:'10px', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden'}}>
-                        <button onClick={() => setManualPage(p => Math.max(1, p-1))} style={{background:'transparent', border:'none', color:'rgba(255,255,255,0.4)', fontSize:'3.5rem', fontWeight:100, cursor:'pointer', padding:'10px 20px'}}>❮</button>
-                        <img src={'/img/manual/page_' + manualPage + '.jpg'} style={{maxWidth:'100%', maxHeight:'100%', objectFit:'contain', borderRadius:'8px'}} alt="คู่มือ" />
-                        <button onClick={() => setManualPage(p => Math.min(12, p+1))} style={{background:'transparent', border:'none', color:'rgba(255,255,255,0.4)', fontSize:'3.5rem', fontWeight:100, cursor:'pointer', padding:'10px 20px'}}>❯</button>
+                <div className="popup-overlay" style={{display:'flex', zIndex:1000, pointerEvents:'auto'}}>
+                    <div className="glass-panel" style={{display:'flex', position:'relative', width:'90vw', height:'90vh', flexDirection:'column', padding:'25px', background:'rgba(20,25,30,0.95)', border:'1px solid rgba(243, 156, 18, 0.5)', boxShadow:'0 0 40px rgba(0,0,0,0.8)', borderRadius:'16px'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px'}}>
+                            <div style={{width: '35px'}}></div>
+                            <h3 style={{color:'#f39c12', margin:0, fontSize:'2rem', textShadow:'0 2px 5px rgba(0,0,0,0.5)'}}>คู่มือการเล่น (หน้า {manualPage}/12)</h3>
+                            <button onClick={() => setShowManual(false)} style={{background:'rgba(255,255,255,0.1)', border:'none', color:'white', width:'35px', height:'35px', borderRadius:'50%', fontSize:'1.2rem', cursor:'pointer', display:'flex', justifyContent:'center', alignItems:'center', transition:'0.2s', padding: 0}} onMouseOver={(e)=>e.currentTarget.style.background='rgba(231, 76, 60, 0.8)'} onMouseOut={(e)=>e.currentTarget.style.background='rgba(255,255,255,0.1)'}>✖</button>
+                        </div>
+                        <div style={{flex:1, position:'relative', background:'rgba(0,0,0,0.6)', borderRadius:'12px', padding:'20px', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', boxShadow:'inset 0 0 20px rgba(0,0,0,0.8)'}}>
+                            <button onClick={() => setManualPage(p => Math.max(1, p-1))} style={{position:'absolute', left:'10px', background:'rgba(0,0,0,0.5)', border:'none', color: manualPage === 1 ? 'rgba(255,255,255,0.1)' : 'white', fontSize:'3rem', cursor: manualPage === 1 ? 'default' : 'pointer', padding:'20px 15px', width:'auto', borderRadius:'8px', transition:'0.3s', zIndex:10}} onMouseOver={(e)=>manualPage !== 1 && (e.currentTarget.style.background='rgba(243, 156, 18, 0.8)')} onMouseOut={(e)=>manualPage !== 1 && (e.currentTarget.style.background='rgba(0,0,0,0.5)')}>❮</button>
+                            
+                            <img src={'/img/manual/page_' + manualPage + '.jpg'} style={{maxWidth:'100%', maxHeight:'100%', objectFit:'contain', borderRadius:'8px', boxShadow:'0 5px 25px rgba(0,0,0,0.5)'}} alt={`คู่มือหน้า ${manualPage}`} />
+                            
+                            <button onClick={() => setManualPage(p => Math.min(12, p+1))} style={{position:'absolute', right:'10px', background:'rgba(0,0,0,0.5)', border:'none', color: manualPage === 12 ? 'rgba(255,255,255,0.1)' : 'white', fontSize:'3rem', cursor: manualPage === 12 ? 'default' : 'pointer', padding:'20px 15px', width:'auto', borderRadius:'8px', transition:'0.3s', zIndex:10}} onMouseOver={(e)=>manualPage !== 12 && (e.currentTarget.style.background='rgba(243, 156, 18, 0.8)')} onMouseOut={(e)=>manualPage !== 12 && (e.currentTarget.style.background='rgba(0,0,0,0.5)')}>❯</button>
+                        </div>
                     </div>
                 </div>
             )}
