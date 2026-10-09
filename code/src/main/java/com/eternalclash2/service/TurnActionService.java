@@ -26,24 +26,22 @@ import java.util.List;
 public class TurnActionService {
     private final TurnActionRepository turnActionRepository;
     private final GameRepository gameRepository;
-    private final PlayerRepository playerRepository;
+    private final PlayerService playerService;
     private final CityRepository cityRepository;
     private final CityService cityService;
     private final ArmyService armyService;
     private final GameEventRepository gameEventRepository;
+    private final com.eternalclash2.command.CommandFactory commandFactory;
 
     @Transactional
     public TurnAction performAction(Long gameId, Long playerId, Long cityId, ActionType requestedAction,
                                     Long targetCityId, Integer soldierCount) {
         Game game = gameRepository.findByIdForUpdate(gameId)
                 .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
-        Player player = playerRepository.findById(playerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Player not found with id: " + playerId));
+        Player player = playerService.getAlivePlayerValidated(playerId);
         if (!player.getGame().getId().equals(gameId)) throw new BusinessLogicException("Player does not belong to this game");
         
         new com.eternalclash2.state.GameStateContext(game.getStatus()).getCurrentState().validateActionSubmission();
-
-        if (!Boolean.TRUE.equals(player.getIsAlive())) throw new BusinessLogicException("Eliminated players cannot take actions");
         
         int turn = game.getCurrentTurnNumber();
         if (turnActionRepository.existsByGame_IdAndTurnNumberAndCity_Id(gameId, turn, cityId)) {
@@ -62,12 +60,7 @@ public class TurnActionService {
         int foodBefore = city.getFood();
         int soldiersBefore = city.getSoldiers();
 
-        PlayerActionCommand command = switch (requestedAction) {
-            case PRODUCE_FOOD -> new ProduceFoodCommand(cityService, cityId, turn);
-            case RECRUIT_SOLDIERS -> new RecruitSoldiersCommand(cityService, cityId, turn);
-            case SEND_ARMY -> new SendArmyCommand(armyService, city, targetCityId, soldierCount, turn, gameEventRepository, game);
-            case NONE -> new NoneCommand();
-        };
+        PlayerActionCommand command = commandFactory.createCommand(requestedAction, cityId, city, targetCityId, soldierCount, turn, game);
 
         command.execute();
 

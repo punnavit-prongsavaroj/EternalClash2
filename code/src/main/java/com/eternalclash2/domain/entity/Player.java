@@ -47,7 +47,8 @@ public class Player {
     @Column(name = "starting_city_id")
     private Long startingCityId;
 
-    
+    @OneToOne(mappedBy = "player", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private PlayerStats playerStats;
 
 }
 

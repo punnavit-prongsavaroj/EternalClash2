@@ -13,7 +13,9 @@ stateDiagram-v2
     
     WAITING --> MARSHAL_SELECTION : ผู้เล่นครบ / กดเริ่มเกม
     
-    MARSHAL_SELECTION --> IN_PROGRESS : ผู้เล่นทุกคนเลือกจอมพลเสร็จ
+    MARSHAL_SELECTION --> PLACEMENT : ผู้เล่นทุกคนเลือกจอมพลเสร็จ
+    
+    PLACEMENT --> IN_PROGRESS : ผู้เล่นทุกคนเลือกเมืองเริ่มต้นเสร็จ
     
     IN_PROGRESS --> FINISHED : เหลือเมืองสุดท้ายเพียง 1 เมือง
     
@@ -25,6 +27,10 @@ stateDiagram-v2
     
     note right of MARSHAL_SELECTION
       สุ่ม Reroll เลือกจอมพลทีละคน
+    end note
+    
+    note right of PLACEMENT
+      ผู้เล่นเลือกเมืองเริ่มต้นบนแผนที่
     end note
     
     note right of IN_PROGRESS

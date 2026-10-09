@@ -14,6 +14,7 @@ import com.eternalclash2.repository.ArmyRepository;
 import com.eternalclash2.repository.CityRepository;
 import com.eternalclash2.repository.MapEdgeRepository;
 import com.eternalclash2.repository.PlayerRepository;
+import com.eternalclash2.strategy.marshal.MarshalAbilityContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +25,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ArmyService {
     private static final double MARCH_FOOD_PER_SOLDIER = 1.25;
-    private static final double ZHOU_YU_FOOD_MULTIPLIER = 1.25;
     
     private final ArmyRepository armyRepository;
     private final PlayerRepository playerRepository;
@@ -50,13 +50,14 @@ public class ArmyService {
         );
         if (!isConnected) throw new BusinessLogicException("You can only send an army to a directly connected city");
 
-        double foodMultiplier = hasSpecial(owner, "NO_ACCIDENT") ? ZHOU_YU_FOOD_MULTIPLIER : 1.0;
+        MarshalAbilityContext context = new MarshalAbilityContext(owner);
+        double foodMultiplier = context.getStrategy().getRecruitFoodMultiplier();
         int foodCost = (int) Math.floor(soldierCount * MARCH_FOOD_PER_SOLDIER * foodMultiplier);
         
         cityService.deductFoodFromNetwork(sourceCity, foodCost);
 
         int travelTurns = 3;
-        if (hasSpecial(owner, "FAST_MARCH")) travelTurns--;
+        if (context.getStrategy().travelsFaster()) travelTurns--;
         if (GameClock.season(turnNumber) == Season.RAINY) travelTurns++;
         travelTurns = Math.max(1, travelTurns);
 
@@ -109,9 +110,5 @@ public class ArmyService {
     private City getCity(Long cityId) {
         return cityRepository.findById(cityId)
                 .orElseThrow(() -> new ResourceNotFoundException("City not found with id: " + cityId));
-    }
-
-    private boolean hasSpecial(Player player, String type) {
-        return player.getMarshal() != null && type.equals(player.getMarshal().getSpecialAbilityType());
     }
 }

@@ -5,7 +5,10 @@
 ## สมาชิกกลุ่ม
 | ลำดับ | ชื่อ-นามสกุล | รหัสนักศึกษา | Section | Branch | หน้าที่รับผิดชอบ |
 |---|---|---|---|---|---|
-| 1 | ปุณณวิช ปรงสวโรจน์ | 6733802810 | 02 | punnavit_6733802810_02 | Backend, Game Engine, Frontend |
+| 1 | นายธนภูมิ แทนทุมมา | 673380271-3 | 1 | thanaphumi_673380271-3_01 | Unit Testing, API Documentation |
+| 2 | นายปุณณวิชญ์ พงษ์สวโรจน์ | 673380281-0 | 2 | punnavit_673380281-0_02 | Backend, Game Engine, Frontend |
+| 3 | นายพงศ์อนันต์ วงศ์ศรี | 673380284-4 | 2 | phonganan_673380284-4_02 | Frontend Integration, Database Design |
+| 4 | นายกิตติพจน์ ทิพย์นางรอง | 633020384-3 | 1 | kittipot_633020384-3_01 | System Architecture, Deployment (CI/CD) |
 
 ## Tech Stack
 - **Backend**: Java 17, Spring Boot 3.2.4
