@@ -17,6 +17,7 @@ import com.eternalclash2.repository.CityRepository;
 import com.eternalclash2.repository.GameEventRepository;
 import com.eternalclash2.repository.GameRepository;
 import com.eternalclash2.repository.PlayerRepository;
+import com.eternalclash2.strategy.marshal.MarshalAbilityContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,16 +51,19 @@ public class GameEventService {
             Player player = city.getPlayer();
             if (player == null || !Boolean.TRUE.equals(player.getIsAlive())) continue;
             
-            if (hasSpecial(player, "REBELLION") && roll(REBELLION_CHANCE_PERCENT)) {
+            boolean eventOccurred = false;
+            MarshalAbilityContext context = new MarshalAbilityContext(player);
+            if (context.getStrategy().causesRebellions() && roll(REBELLION_CHANCE_PERCENT)) {
                 int foodBefore = city.getFood(), soldiersBefore = city.getSoldiers();
                 city.setFood(Math.max(0, foodBefore / 2));
                 city.setSoldiers(Math.max(0, soldiersBefore / 2));
                 cityRepository.save(city);
                 events.add(save(game, turnNumber, EventType.REBELLION, player, null, LocationType.IN_CITY,
                         city.getFood() - foodBefore, city.getSoldiers() - soldiersBefore, 0,
-                        "Rebellion halved the city's food and soldiers."));
+                        "Rebellion halved food and soldiers at " + city.getName() + "."));
+                eventOccurred = true;
             }
-            if (roll(EVENT_CHANCE_PERCENT)) {
+            if (!eventOccurred && roll(EVENT_CHANCE_PERCENT)) {
                 GameEvent event = applyCityEvent(game, city, player, season, turnNumber);
                 if (event != null) events.add(event);
             }
@@ -107,11 +111,12 @@ public class GameEventService {
         }
         cityRepository.save(city);
         return save(game, turn, type, player, null, LocationType.IN_CITY, foodImpact, soldierImpact, 0,
-                "A seasonal event affected the city.");
+                "A seasonal event affected " + city.getName() + ".");
     }
 
     private GameEvent applyArmyEvent(Game game, Army army, Season season, int turn) {
-        if (hasSpecial(army.getOwner(), "NO_ACCIDENT")) return null;
+        MarshalAbilityContext context = new MarshalAbilityContext(army.getOwner());
+        if (context.getStrategy().preventsAccidents()) return null;
         List<EventType> choices = new ArrayList<>();
         choices.add(EventType.SINKHOLE);
         if (season == Season.SUMMER) { choices.add(EventType.SUN_GLARE); choices.add(EventType.SUNBURN); }

@@ -45,7 +45,7 @@ body, html {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('../Menu/menuBG.jpg'); /* อัปเดตให้ตรงกับไฟล์ที่มี */
+    background-image: url('/Menu/menuBG.jpg'); /* อัปเดตให้ตรงกับไฟล์ที่มี */
     background-size: cover;
     background-position: center;
     z-index: -1;
@@ -509,3 +509,4 @@ button:hover {
     #log-panel { max-height: 150px !important; width: 250px !important; }
     #marshal-single-card { transform: scale(0.5); margin-bottom: -250px !important; }
 }
+@keyframes fadeInOut { 0% { opacity: 0; } 40% { opacity: 1; } 60% { opacity: 1; } 100% { opacity: 0; } }

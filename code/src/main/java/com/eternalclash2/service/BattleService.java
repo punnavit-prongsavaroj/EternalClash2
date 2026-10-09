@@ -22,6 +22,7 @@ public class BattleService {
     private final PlayerRepository playerRepository;
     private final GameRepository gameRepository;
     private final GameEventRepository gameEventRepository;
+    private final GameRuleService gameRuleService;
 
     @Transactional
     public void resolveBattles(Long gameId, int turnNumber) {
@@ -36,7 +37,7 @@ public class BattleService {
             resolveArrival(army, turnNumber);
             
             Game game = army.getOwner().getGame();
-            checkWinCondition(game);
+            gameRuleService.checkWinCondition(game);
             if (game.getStatus() == GameStatus.FINISHED) break;
         }
     }
@@ -68,6 +69,13 @@ public class BattleService {
                     second.setSoldiers(secondBefore - secondLosses);
                     if (first.getSoldiers() <= 0) first.setStatus(ArmyStatus.CANCELLED);
                     if (second.getSoldiers() <= 0) second.setStatus(ArmyStatus.CANCELLED);
+
+                    if (first.getOwner().getPlayerStats() != null) {
+                        first.getOwner().getPlayerStats().setTotalBattlesFought(first.getOwner().getPlayerStats().getTotalBattlesFought() + 1);
+                    }
+                    if (second.getOwner().getPlayerStats() != null) {
+                        second.getOwner().getPlayerStats().setTotalBattlesFought(second.getOwner().getPlayerStats().getTotalBattlesFought() + 1);
+                    }
                     
                     armyRepository.save(first);
                     armyRepository.save(second);
@@ -106,6 +114,14 @@ public class BattleService {
         int attackersBefore = army.getSoldiers();
         
         Player defender = targetCity.getPlayer(); // Can be null if neutral
+
+        if (owner.getPlayerStats() != null) {
+            owner.getPlayerStats().setTotalBattlesFought(owner.getPlayerStats().getTotalBattlesFought() + 1);
+        }
+        if (defender != null && defender.getPlayerStats() != null) {
+            defender.getPlayerStats().setTotalBattlesFought(defender.getPlayerStats().getTotalBattlesFought() + 1);
+        }
+
         int attackerKills = kills(owner, attackersBefore);
         int defenderKills = defender != null ? kills(defender, defendersBefore) : defendersBefore; // Neutral deals 1-to-1 damage
         
@@ -147,9 +163,13 @@ public class BattleService {
                 
                 army.setSoldiers(0);
                 army.setStatus(ArmyStatus.DESTROYED);
+
+                if (owner.getPlayerStats() != null) {
+                    owner.getPlayerStats().setCitiesConquered(owner.getPlayerStats().getCitiesConquered() + 1);
+                }
                 
                 if (defender != null) {
-                    checkPlayerElimination(defender, turnNumber);
+                    gameRuleService.checkPlayerElimination(defender, turnNumber);
                 }
             }
         } else {
@@ -177,27 +197,6 @@ public class BattleService {
                 .attackerSoldiers(attackersBefore).defenderSoldiers(defendersBefore)
                 .attackerCasualties(attackerLosses).defenderCasualties(defenderLosses)
                 .isCityDestroyed(isCityCaptured).result(isCityCaptured ? BattleResult.ATTACKER_WIN : BattleResult.DEFENDER_WIN).build());
-    }
-
-    private void checkPlayerElimination(Player player, int turnNumber) {
-        long citiesOwned = cityRepository.findByGame_Id(player.getGame().getId()).stream()
-                .filter(c -> c.getPlayer() != null && c.getPlayer().getId().equals(player.getId())).count();
-                
-        if (citiesOwned == 0) {
-            player.setIsAlive(false);
-            player.setEliminatedAtTurn(turnNumber);
-            playerRepository.save(player);
-        }
-    }
-
-    private void checkWinCondition(Game game) {
-        List<Player> alive = playerRepository.findByGame_IdOrderById(game.getId()).stream()
-                .filter(p -> Boolean.TRUE.equals(p.getIsAlive())).toList();
-        if (alive.size() <= 1 && game.getStatus() != GameStatus.WAITING && game.getStatus() != GameStatus.PLACEMENT && game.getStatus() != GameStatus.MARSHAL_SELECTION) {
-            game.setStatus(GameStatus.FINISHED);
-            game.setWinner(alive.isEmpty() ? null : alive.get(0));
-            gameRepository.save(game);
-        }
     }
 
     private int kills(Player player, int soldiers) {
