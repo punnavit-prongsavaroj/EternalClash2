@@ -26,50 +26,48 @@ import java.util.List;
 public class TurnActionService {
     private final TurnActionRepository turnActionRepository;
     private final GameRepository gameRepository;
-    private final PlayerRepository playerRepository;
+    private final PlayerService playerService;
     private final CityRepository cityRepository;
     private final CityService cityService;
     private final ArmyService armyService;
     private final GameEventRepository gameEventRepository;
+    private final com.eternalclash2.command.CommandFactory commandFactory;
 
     @Transactional
-    public TurnAction performAction(Long gameId, Long playerId, ActionType requestedAction,
-                                    Long targetPlayerId, Integer soldierCount) {
+    public TurnAction performAction(Long gameId, Long playerId, Long cityId, ActionType requestedAction,
+                                    Long targetCityId, Integer soldierCount) {
         Game game = gameRepository.findByIdForUpdate(gameId)
                 .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
-        Player player = playerRepository.findById(playerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Player not found with id: " + playerId));
+        Player player = playerService.getAlivePlayerValidated(playerId);
         if (!player.getGame().getId().equals(gameId)) throw new BusinessLogicException("Player does not belong to this game");
         
-        // --- ใช้ State Pattern เช็คสถานะเกม ---
         new com.eternalclash2.state.GameStateContext(game.getStatus()).getCurrentState().validateActionSubmission();
-
-        if (!Boolean.TRUE.equals(player.getIsAlive())) throw new BusinessLogicException("Eliminated players cannot take actions");
         
         int turn = game.getCurrentTurnNumber();
-        if (turnActionRepository.existsByGame_IdAndTurnNumberAndPlayer_Id(gameId, turn, playerId)) {
-            throw new BusinessLogicException("Player has already submitted an action for this turn");
+        if (turnActionRepository.existsByGame_IdAndTurnNumberAndCity_Id(gameId, turn, cityId)) {
+            return turnActionRepository.findByGame_IdAndTurnNumber(gameId, turn).stream()
+                    .filter(a -> a.getCity().getId().equals(cityId)).findFirst().orElseThrow();
         }
         if (requestedAction == null) throw new BusinessLogicException("Action type is required");
 
-        City city = cityRepository.findByPlayer_Id(playerId)
-                .orElseThrow(() -> new ResourceNotFoundException("City not found for player: " + playerId));
+        City city = cityRepository.findById(cityId)
+                .orElseThrow(() -> new ResourceNotFoundException("City not found: " + cityId));
+        
+        if (city.getPlayer() == null || !city.getPlayer().getId().equals(playerId)) {
+            throw new BusinessLogicException("You do not own this city");
+        }
+                
         int foodBefore = city.getFood();
         int soldiersBefore = city.getSoldiers();
 
-        PlayerActionCommand command = switch (requestedAction) {
-            case PRODUCE_FOOD -> new ProduceFoodCommand(cityService, playerId, turn);
-            case RECRUIT_SOLDIERS -> new RecruitSoldiersCommand(cityService, playerId, turn);
-            case SEND_ARMY -> new SendArmyCommand(armyService, player, targetPlayerId, soldierCount, turn, gameEventRepository, game);
-            case NONE -> new NoneCommand();
-        };
+        PlayerActionCommand command = commandFactory.createCommand(requestedAction, cityId, city, targetCityId, soldierCount, turn, game);
 
         command.execute();
 
-        City after = cityRepository.findByPlayer_Id(playerId)
-                .orElseThrow(() -> new ResourceNotFoundException("City not found for player: " + playerId));
+        City after = cityRepository.findById(cityId)
+                .orElseThrow(() -> new ResourceNotFoundException("City not found: " + cityId));
                 
-        return turnActionRepository.save(TurnAction.builder().game(game).turnNumber(turn).player(player)
+        return turnActionRepository.save(TurnAction.builder().game(game).turnNumber(turn).player(player).city(city)
                 .actionType(command.getRecordedAction()).army(command.getArmy()).foodBefore(foodBefore).foodAfter(after.getFood())
                 .soldiersBefore(soldiersBefore).soldiersAfter(after.getSoldiers()).build());
     }

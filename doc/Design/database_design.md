@@ -131,7 +131,7 @@ erDiagram
 | ความสัมพันธ์ | ประเภท | คำอธิบาย |
 |---|---|---|
 | `games` → `players` | **One-to-Many** | 1 เกมมีหลายผู้เล่น |
-| `players` ↔ `cities` | **One-to-One** | 1 ผู้เล่นมี 1 เมือง (UNIQUE FK) |
+| `players` → `cities` | **One-to-Many** | 1 ผู้เล่นเป็นเจ้าของได้หลายเมือง (NULL = เมืองร้าง) |
 | `players` → `armies` | **One-to-Many** | 1 ผู้เล่นส่งได้หลายกองทัพ |
 | `players` → `marshal_candidates` | **One-to-Many** | 1 ผู้เล่นได้รับ 3 ตัวเลือกจอมพล |
 | `marshals` → `players` | **One-to-Many** | 1 จอมพลถูกเลือกโดยหลายผู้เล่น (คนละเกม) |
@@ -149,7 +149,7 @@ erDiagram
 | Column | Type | Constraint | Description |
 |---|---|---|---|
 | `id` | BIGINT | PK, AUTO_INCREMENT | รหัสเกม |
-| `status` | VARCHAR(20) | NOT NULL, DEFAULT 'WAITING' | สถานะเกม: `WAITING`, `MARSHAL_SELECTION`, `IN_PROGRESS`, `FINISHED` |
+| `status` | VARCHAR(20) | NOT NULL, DEFAULT 'WAITING' | สถานะเกม: `WAITING`, `MARSHAL_SELECTION`, `PLACEMENT`, `IN_PROGRESS`, `FINISHED` |
 | `current_turn_number` | INT | NOT NULL, DEFAULT 0 | Turn ปัจจุบัน (ฤดูและกลางวัน/กลางคืนคำนวณจากค่านี้) |
 | `winner_player_id` | BIGINT | FK → players, NULLABLE | ผู้ชนะ (NULL ถ้ายังไม่จบ) |
 | `created_at` | TIMESTAMP | NOT NULL | วันที่สร้างเกม |
@@ -207,17 +207,33 @@ erDiagram
 
 ---
 
-### 4. `cities` — เมือง (One-to-One กับ players)
+### 4. `cities` — เมือง
 
 | Column | Type | Constraint | Description |
 |---|---|---|---|
 | `id` | BIGINT | PK, AUTO_INCREMENT | รหัสเมือง |
-| `player_id` | BIGINT | FK → players, **UNIQUE**, NOT NULL | เจ้าของเมือง (UNIQUE = One-to-One) |
+| `game_id` | BIGINT | FK → games, NOT NULL | เกม |
+| `player_id` | BIGINT | FK → players, NULLABLE | เจ้าของเมือง (NULL = เมืองร้าง) |
 | `name` | VARCHAR(50) | NOT NULL | ชื่อเมือง |
-| `food` | INT | NOT NULL, DEFAULT 100 | อาหารคงเหลือ |
-| `soldiers` | INT | NOT NULL, DEFAULT 50 | ทหารในเมือง |
+| `food` | INT | NOT NULL, DEFAULT 0 | อาหารคงเหลือ |
+| `soldiers` | INT | NOT NULL, DEFAULT 30 | ทหารในเมือง |
+| `x` | DECIMAL | NOT NULL | พิกัด X บนแผนที่ |
+| `y` | DECIMAL | NOT NULL | พิกัด Y บนแผนที่ |
+| `action_used_this_turn` | BOOLEAN | NOT NULL, DEFAULT FALSE | ใช้ Action ไปแล้วในเทิร์นนี้หรือไม่ |
 
-> [!IMPORTANT] `player_id` เป็น **UNIQUE** เพื่อบังคับ One-to-One Relationship
+> [!IMPORTANT] `player_id` เป็น **NULL** ได้สำหรับเมืองร้างที่ยังไม่มีใครครอบครอง
+
+---
+
+### 4.5. `map_edges` — เส้นทางเชื่อมต่อระหว่างเมือง
+
+| Column | Type | Constraint | Description |
+|---|---|---|---|
+| `id` | BIGINT | PK, AUTO_INCREMENT | รหัสเส้นทาง |
+| `game_id` | BIGINT | FK → games, NOT NULL | เกม |
+| `city1_id` | BIGINT | FK → cities, NOT NULL | เมืองที่ 1 |
+| `city2_id` | BIGINT | FK → cities, NOT NULL | เมืองที่ 2 |
+| `distance` | INT | NOT NULL, DEFAULT 1 | ระยะทาง (Turn ที่ใช้เดินทาง) |
 
 ---
 
@@ -226,8 +242,10 @@ erDiagram
 | Column | Type | Constraint | Description |
 |---|---|---|---|
 | `id` | BIGINT | PK, AUTO_INCREMENT | รหัสกองทัพ |
+| `game_id` | BIGINT | FK → games, NOT NULL | เกม |
 | `owner_player_id` | BIGINT | FK → players, NOT NULL | ผู้เล่นเจ้าของกองทัพ |
-| `target_player_id` | BIGINT | FK → players, NOT NULL | ผู้เล่นเป้าหมาย |
+| `source_city_id` | BIGINT | FK → cities, NOT NULL | เมืองต้นทาง |
+| `target_city_id` | BIGINT | FK → cities, NOT NULL | เมืองเป้าหมาย |
 | `soldiers` | INT | NOT NULL | จำนวนทหารปัจจุบัน |
 | `departure_turn` | INT | NOT NULL | Turn ที่ออกเดินทาง |
 | `arrival_turn` | INT | NOT NULL | Turn ที่คาดว่าจะถึง |

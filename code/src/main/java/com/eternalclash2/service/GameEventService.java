@@ -17,6 +17,7 @@ import com.eternalclash2.repository.CityRepository;
 import com.eternalclash2.repository.GameEventRepository;
 import com.eternalclash2.repository.GameRepository;
 import com.eternalclash2.repository.PlayerRepository;
+import com.eternalclash2.strategy.marshal.MarshalAbilityContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,42 +31,45 @@ import java.util.concurrent.ThreadLocalRandom;
 public class GameEventService {
     private static final int EVENT_CHANCE_PERCENT = 10;
     private static final int REBELLION_CHANCE_PERCENT = 5;
+    
     private final GameEventRepository gameEventRepository;
     private final GameRepository gameRepository;
     private final PlayerRepository playerRepository;
     private final CityRepository cityRepository;
     private final ArmyRepository armyRepository;
 
-    /** Resolves independently for each city and traveling army, as specified in the rules. */
     @Transactional
     public List<GameEvent> processTurn(Long gameId, int turnNumber) {
         Game game = gameRepository.findById(gameId).orElseThrow(() -> new ResourceNotFoundException("Game not found: " + gameId));
         if (game.getStatus() != GameStatus.IN_PROGRESS) return List.of();
         Season season = GameClock.season(turnNumber);
         List<GameEvent> events = new ArrayList<>();
-        List<Player> players = playerRepository.findByGame_IdOrderById(gameId).stream()
-                .filter(p -> Boolean.TRUE.equals(p.getIsAlive())).toList();
-
-        for (Player player : players) {
-            if (hasSpecial(player, "REBELLION") && roll(REBELLION_CHANCE_PERCENT)) {
-                City city = cityRepository.findByPlayer_Id(player.getId()).orElse(null);
-                if (city != null) {
-                    int foodBefore = city.getFood(), soldiersBefore = city.getSoldiers();
-                    city.setFood(Math.max(0, foodBefore / 2));
-                    city.setSoldiers(Math.max(0, soldiersBefore / 2));
-                    cityRepository.save(city);
-                    events.add(save(game, turnNumber, EventType.REBELLION, player, null, LocationType.IN_CITY,
-                            city.getFood() - foodBefore, city.getSoldiers() - soldiersBefore, 0,
-                            "Rebellion halved the city's food and soldiers."));
-                }
+        
+        List<City> cities = cityRepository.findByGame_Id(gameId);
+        
+        for (City city : cities) {
+            Player player = city.getPlayer();
+            if (player == null || !Boolean.TRUE.equals(player.getIsAlive())) continue;
+            
+            boolean eventOccurred = false;
+            MarshalAbilityContext context = new MarshalAbilityContext(player);
+            if (context.getStrategy().causesRebellions() && roll(REBELLION_CHANCE_PERCENT)) {
+                int foodBefore = city.getFood(), soldiersBefore = city.getSoldiers();
+                city.setFood(Math.max(0, foodBefore / 2));
+                city.setSoldiers(Math.max(0, soldiersBefore / 2));
+                cityRepository.save(city);
+                events.add(save(game, turnNumber, EventType.REBELLION, player, null, LocationType.IN_CITY,
+                        city.getFood() - foodBefore, city.getSoldiers() - soldiersBefore, 0,
+                        "Rebellion halved food and soldiers at " + city.getName() + "."));
+                eventOccurred = true;
             }
-            if (roll(EVENT_CHANCE_PERCENT)) {
-                GameEvent event = applyCityEvent(game, player, season, turnNumber);
+            if (!eventOccurred && roll(EVENT_CHANCE_PERCENT)) {
+                GameEvent event = applyCityEvent(game, city, player, season, turnNumber);
                 if (event != null) events.add(event);
             }
         }
 
-        List<Army> armies = armyRepository.findByTarget_Game_IdAndStatus(gameId, ArmyStatus.TRAVELING).stream()
+        List<Army> armies = armyRepository.findByTargetCity_Game_IdAndStatus(gameId, ArmyStatus.TRAVELING).stream()
                 .filter(a -> a.getDepartureTurn() <= turnNumber && a.getSoldiers() > 0).toList();
         for (Army army : armies) {
             if (roll(EVENT_CHANCE_PERCENT)) {
@@ -76,15 +80,16 @@ public class GameEventService {
         return events;
     }
 
-    private GameEvent applyCityEvent(Game game, Player player, Season season, int turn) {
+    private GameEvent applyCityEvent(Game game, City city, Player player, Season season, int turn) {
         List<EventType> choices = new ArrayList<>();
         if (season == Season.RAINY) choices.add(EventType.INSECT_DAMAGE);
         if (season == Season.WINTER) choices.add(EventType.FROSTBITE);
         if (season == Season.RAINY) choices.add(EventType.FLOOD);
         if (season == Season.SUMMER) choices.add(EventType.SUNBURN);
+        if (choices.isEmpty()) return null;
+        
         EventType type = choices.get(ThreadLocalRandom.current().nextInt(choices.size()));
-        City city = cityRepository.findByPlayer_Id(player.getId()).orElse(null);
-        if (city == null) return null;
+        
         int foodImpact = 0, soldierImpact = 0;
         switch (type) {
             case INSECT_DAMAGE -> {
@@ -106,11 +111,12 @@ public class GameEventService {
         }
         cityRepository.save(city);
         return save(game, turn, type, player, null, LocationType.IN_CITY, foodImpact, soldierImpact, 0,
-                "A seasonal event affected the city.");
+                "A seasonal event affected " + city.getName() + ".");
     }
 
     private GameEvent applyArmyEvent(Game game, Army army, Season season, int turn) {
-        if (hasSpecial(army.getOwner(), "NO_ACCIDENT")) return null;
+        MarshalAbilityContext context = new MarshalAbilityContext(army.getOwner());
+        if (context.getStrategy().preventsAccidents()) return null;
         List<EventType> choices = new ArrayList<>();
         choices.add(EventType.SINKHOLE);
         if (season == Season.SUMMER) { choices.add(EventType.SUN_GLARE); choices.add(EventType.SUNBURN); }

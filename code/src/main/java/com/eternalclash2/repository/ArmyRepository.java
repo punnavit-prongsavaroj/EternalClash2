@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 public interface ArmyRepository extends JpaRepository<Army, Long> {
     java.util.List<Army> findByStatusAndArrivalTurnLessThanEqual(ArmyStatus status, Integer arrivalTurn);
     java.util.List<Army> findByOwner_IdAndStatus(Long ownerId, ArmyStatus status);
-    java.util.List<Army> findByTarget_Game_IdAndStatus(Long gameId, ArmyStatus status);
+    java.util.List<Army> findByTargetCity_Game_IdAndStatus(Long gameId, ArmyStatus status);
 }
 
 

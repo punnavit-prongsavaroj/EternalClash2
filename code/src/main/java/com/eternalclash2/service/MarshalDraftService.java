@@ -37,8 +37,7 @@ public class MarshalDraftService {
         List<Player> players = playerRepository.findByGame_IdOrderById(gameId);
         Player current = players.stream().filter(p -> p.getMarshal() == null).findFirst().orElse(null);
         if (current == null) {
-            game.setStatus(GameStatus.IN_PROGRESS);
-            game.setCurrentTurnNumber(1);
+            game.setStatus(GameStatus.PLACEMENT);
             gameRepository.save(game);
             return List.of();
         }
@@ -92,8 +91,7 @@ public class MarshalDraftService {
         boolean allSelected = playerRepository.findByGame_IdOrderById(game.getId()).stream()
                 .allMatch(p -> p.getMarshal() != null);
         if (allSelected) {
-            game.setStatus(GameStatus.IN_PROGRESS);
-            game.setCurrentTurnNumber(1);
+            game.setStatus(GameStatus.PLACEMENT);
             gameRepository.save(game);
         } else {
             prepareNextPlayer(game.getId());
