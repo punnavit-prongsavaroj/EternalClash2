@@ -177,4 +177,19 @@ public class GameService {
         return gameRepository.findById(gameId)
                 .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
     }
+
+    @Transactional
+    public void deleteGame(Long gameId) {
+        Game game = getGame(gameId);
+        gameRepository.delete(game);
+    }
+
+    // Cleanup abandoned or old games
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 3600000) // Run every 1 hour
+    @Transactional
+    public void cleanupOldGames() {
+        java.time.LocalDateTime threshold = java.time.LocalDateTime.now().minusHours(24);
+        java.util.List<Game> oldGames = gameRepository.findByUpdatedAtBefore(threshold);
+        gameRepository.deleteAll(oldGames);
+    }
 }

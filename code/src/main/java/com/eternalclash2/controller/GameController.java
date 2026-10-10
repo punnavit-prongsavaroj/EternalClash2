@@ -59,6 +59,12 @@ public class GameController {
                 .stream().map(PlayerDto::from).toList());
     }
 
+    @DeleteMapping("/{gameId}")
+    public ResponseEntity<Void> deleteGame(@PathVariable Long gameId) {
+        gameService.deleteGame(gameId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/{gameId}/start")
     public ResponseEntity<GameDto> startGame(@PathVariable Long gameId) {
         return ResponseEntity.ok(GameDto.from(gameService.startGame(gameId)));

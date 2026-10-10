@@ -34,7 +34,7 @@ public class Battle {
     private Army attackerArmy;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "defender_player_id", nullable = false)
+    @JoinColumn(name = "defender_player_id")
     private Player defenderPlayer;
 
     @ManyToOne(fetch = FetchType.LAZY)
