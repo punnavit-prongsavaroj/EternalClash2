@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { createGame, fetchGameByCode, joinGame } from '../api'
+import ManualModal from './ManualModal'
 
 export default function LobbyScreen({ playerName, onJoined, onLogout }) {
     const [showJoinPopup, setShowJoinPopup] = useState(false);
     const [roomCode, setRoomCode] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showManual, setShowManual] = useState(false);
 
     const handleCreate = async () => {
         setLoading(true);
@@ -36,6 +38,9 @@ export default function LobbyScreen({ playerName, onJoined, onLogout }) {
             </div>
             <button className="logout-btn" onClick={onLogout}>ออกจากระบบ</button>
             <div className="player-name-display">ท่านขุนพล: <span className="highlight">{playerName}</span></div>
+            
+            <button className="action-btn" style={{position:'absolute', bottom:'20px', right:'20px', zIndex:15, background:'#2980b9', padding:'10px 20px', fontSize:'1.1rem', width:'auto', boxShadow:'0 5px 15px rgba(0,0,0,0.5)'}} onClick={() => setShowManual(v => !v)}>📖 คู่มือการเล่น</button>
+            
             <div className="bottom-actions">
                 <button className="action-btn create-btn" onClick={handleCreate} disabled={loading}>สร้างห้อง</button>
                 <button className="action-btn join-btn" onClick={() => setShowJoinPopup(true)} disabled={loading}>เข้าร่วมห้อง</button>
@@ -52,6 +57,8 @@ export default function LobbyScreen({ playerName, onJoined, onLogout }) {
                     </div>
                 </div>
             )}
+
+            {showManual && <ManualModal onClose={() => setShowManual(false)} />}
         </div>
     );
 }
