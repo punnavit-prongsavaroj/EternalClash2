@@ -17,7 +17,8 @@ public record BattleDto(Long id, Long gameId, Integer turnNumber, BattleType bat
         Army attacker = battle.getAttackerArmy();
         Army defender = battle.getDefenderArmy();
         return new BattleDto(battle.getId(), battle.getGame().getId(), battle.getTurnNumber(), battle.getBattleType(),
-                attacker.getOwner().getId(), attacker.getId(), battle.getDefenderPlayer().getId(),
+                attacker.getOwner().getId(), attacker.getId(), 
+                battle.getDefenderPlayer() == null ? null : battle.getDefenderPlayer().getId(),
                 defender == null ? null : defender.getId(), battle.getAttackerSoldiers(), battle.getDefenderSoldiers(),
                 battle.getAttackerCasualties(), battle.getDefenderCasualties(), battle.getIsCityDestroyed(),
                 battle.getResult());
