@@ -45,3 +45,4 @@ export const submitAction = (gameId, playerId, body) => api('/games/' + gameId +
 export const resolveTurn = (gameId) => fetch(API_BASE_URL + '/games/' + gameId + '/resolve-turn', { method:'POST' }).catch(() => {});
 export const fetchEvents = (gameId, turnNumber) => api('/games/' + gameId + '/events?turnNumber=' + turnNumber);
 export const fetchBattles = (gameId, turnNumber) => api('/games/' + gameId + '/battles?turnNumber=' + turnNumber);
+export const wakeUpBackend = () => fetch(API_BASE_URL + '/games/code/wakeup-ping').catch(() => {});
