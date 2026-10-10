@@ -18,7 +18,7 @@
 |Authentication|**ไม่มี** ในเวอร์ชันนี้ — ไม่มีการตรวจสอบตัวตนหรือสิทธิ์ในทุก endpoint|
 |Controller|`GameController` · `PlayerController` · `MarshalDraftController` · `PlacementController` · `TurnController` · `GameLogController`|
 |จำนวน endpoint|18|
-|OpenAPI spec|เปิดดูได้ที่ `http://localhost:8080/swagger-ui/index.html` และ `/v3/api-docs`|
+|OpenAPI spec|ไฟล์เอกสารที่ generate จริงเก็บไว้ที่ `doc/openapi.yaml` (OpenAPI 3.0.1 — 16 paths / 18 operations) · เปิด viewer ที่ `http://localhost:8080/swagger-ui/index.html` หรือ `https://eternalclash2.onrender.com/swagger-ui/index.html` (`/swagger-ui.html` redirect มา here) · ดึง spec สดจากแอปที่ `/v3/api-docs` (JSON) และ `/v3/api-docs.yaml` (YAML)|
 
 ข้อมูลที่ฝั่ง client ต้องถือไว้ตลอดคือ `gameId`, `playerId`, `cityId` (ทั้งหมดเป็น `Long` ของฐานข้อมูล) และ `roomCode` (string 6 ตัวอักษร A–Z, 0–9)
 
@@ -399,5 +399,6 @@ enum ทั้งหมดอยู่ใน `code/src/main/java/com/eternalclas
   2. คำขอที่ขาด required query parameter (`viewerPlayerId`, `playerId`, `cityId` ของ placement) — คาดว่าได้ 500 จาก handler `Exception` ตัวสุดท้าย
   3. การกรอง `GET /api/games` แบบ page แรก/หน้าถัดไป
   4. endpoint (8) ทั้งหมด — ไม่มี test class ของ `GameViewService` (รายการช่องว่างการทดสอบเต็มรูปแบบอยู่ใน `TestSuiteSummary.xlsx → CoverageGap`)
+* เอกสาร OpenAPI (machine-readable) เป็นไฟล์ที่ springdoc generate ขึ้นตอนรันแอป ไม่ใช่ไฟล์ที่เขียนมือ — snapshot ปัจจุบันเก็บไว้ที่ `doc/openapi.yaml` (OpenAPI 3.0.1, 16 paths / 18 operations, ดึงจาก `/v3/api-docs.yaml` ของ instance บน Render เมื่อ 2026-10-10) **เมื่อเพิ่มหรือแก้ endpoint ต้องดึง spec ใหม่มาทับ** ไม่งั้นไฟล์นี้จะกลายเป็นข้อมูลเก่าที่ขัดกับโค้ด
 * เอกสารนี้ไม่ครอบคลุมกฎเกมเชิงลึก (อาหาร/ทหาร/การรบ/ฤดู) ดู `doc/game\_rules\_specification.md` และไม่ครอบคลุมโครงสร้างตารางฐานข้อมูล ดู `doc/data\_dictionary.md`
 
