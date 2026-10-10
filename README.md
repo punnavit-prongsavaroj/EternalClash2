@@ -22,7 +22,7 @@ Layered Architecture (Controller -> Service -> Repository -> Database)
 - มีการประยุกต์ใช้ Domain-Driven Design (แบ่ง Domain Service ออกจาก Application Service)
 
 ## Database Design (ER Diagram)
-- **ER Diagram**: ดูภาพในไฟล์ doc/diagrams/ErDiagram.svg หรือ doc/diagrams/Database.png
+- **ER Diagram**: ดูภาพในไฟล์ `doc/diagrams/New/er_diagram.jpg`
 - **Data Dictionary**: คำอธิบายตารางอยู่ในไฟล์ doc/data_dictionary.md
 
 ## Installation & Setup

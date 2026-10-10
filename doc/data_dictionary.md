@@ -94,6 +94,6 @@
 | game_id | BIGINT | FOREIGN KEY | รหัสเกม |
 | turn_number | INTEGER | NOT NULL | เทิร์นที่สั่งแอ็กชัน |
 | player_id | BIGINT | FOREIGN KEY | ผู้เล่นที่ออกคำสั่ง |
-| action_type | VARCHAR(50) | NOT NULL | ประเภทคำสั่ง (PRODUCE, RECRUIT, SEND_ARMY) |
+| action_type | VARCHAR(50) | NOT NULL | ประเภทคำสั่ง (PRODUCE_FOOD, RECRUIT_SOLDIERS, SEND_ARMY, NONE) |
 | target_city_id | BIGINT | FOREIGN KEY | เมืองเป้าหมายที่อ้างอิง |
 | soldiers_count | INTEGER | | จำนวนทหาร (สำหรับส่งทัพ) |
