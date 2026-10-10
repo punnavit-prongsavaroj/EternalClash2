@@ -1,9 +1,23 @@
 package com.eternalclash2.controller;
 
-import com.eternalclash2.domain.entity.*;
+import com.eternalclash2.domain.entity.Army;
+import com.eternalclash2.domain.entity.Battle;
+import com.eternalclash2.domain.entity.City;
+import com.eternalclash2.domain.entity.Game;
+import com.eternalclash2.domain.entity.Marshal;
+import com.eternalclash2.domain.entity.MarshalCandidate;
+import com.eternalclash2.domain.entity.Player;
+import com.eternalclash2.domain.entity.TurnAction;
 import com.eternalclash2.domain.enums.ActionType;
 import com.eternalclash2.domain.enums.GameStatus;
-import com.eternalclash2.service.*;
+import com.eternalclash2.service.BattleService;
+import com.eternalclash2.service.GameEventService;
+import com.eternalclash2.service.GameService;
+import com.eternalclash2.service.GameViewService;
+import com.eternalclash2.service.MarshalCandidateService;
+import com.eternalclash2.service.PlayerService;
+import com.eternalclash2.service.TurnActionService;
+import com.eternalclash2.service.TurnService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -55,7 +69,7 @@ class GameEndpointTest {
     }
 
     @Test
-    void createGameSucceedsEvenThoughBuilderLeavesPlayersNull() throws Exception {
+    void tc01_postGames_createsAGameEvenThoughTheBuilderLeavesPlayersNull() throws Exception {
         given(gameService.createGame()).willReturn(game(1L, GameStatus.WAITING, 0));
 
         mockMvc.perform(post("/api/games"))
@@ -66,7 +80,7 @@ class GameEndpointTest {
     }
 
     @Test
-    void getPlayerSerialisesWithoutFollowingEntityRelations() throws Exception {
+    void tc02_getPlayer_serialisesWithoutFollowingEntityRelations() throws Exception {
         Game game = game(10L, GameStatus.IN_PROGRESS, 3);
         Player player = player(1L, game);
         given(playerService.findById(1L)).willReturn(player);
@@ -81,7 +95,7 @@ class GameEndpointTest {
     }
 
     @Test
-    void joinGameRejectsBlankPlayerName() throws Exception {
+    void tc03_postPlayer_rejectsBlankPlayerName() throws Exception {
         mockMvc.perform(post("/api/games/1/players").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"  \"}"))
                 .andExpect(status().isBadRequest())
@@ -89,7 +103,7 @@ class GameEndpointTest {
     }
 
     @Test
-    void submitActionRecordsTheCommandResult() throws Exception {
+    void tc04_postAction_recordsTheCommandResult() throws Exception {
         Game game = game(1L, GameStatus.IN_PROGRESS, 3);
         Player player = player(2L, game);
         City sourceCity = City.builder().id(10L).player(player).name("Source").build();
@@ -110,7 +124,7 @@ class GameEndpointTest {
     }
 
     @Test
-    void rerollRevealsTheNextCandidateSlot() throws Exception {
+    void tc05_postReroll_revealsTheNextCandidateSlot() throws Exception {
         Player player = player(2L, game(1L, GameStatus.MARSHAL_SELECTION, 0));
         given(marshalCandidateService.reroll(2L)).willReturn(MarshalCandidate.builder().id(21L).player(player)
                 .marshal(Marshal.builder().id(2L).name("ลิโป้").build()).slotNumber(2).isSelected(false).build());
@@ -122,7 +136,7 @@ class GameEndpointTest {
     }
 
     @Test
-    void battlesAreLimitedToOneGameAndOneTurn() throws Exception {
+    void tc06_getBattles_areLimitedToOneGameAndOneTurn() throws Exception {
         Game first = game(1L, GameStatus.IN_PROGRESS, 4);
         Player attacker = player(2L, first);
         Player defender = player(3L, first);
