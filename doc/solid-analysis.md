@@ -19,8 +19,8 @@ public class GameClock {
 ```
 
 2. **O - Open/Closed Principle (OCP)**
-   - **คลาส/ไฟล์:** `code/src/main/java/com/eternalclash2/domain/entity/PlayerActionCommand.java` และคลาสที่ Implement
-   - **บรรทัดที่:** 25-43
+   - **คลาส/ไฟล์:** `code/src/main/java/com/eternalclash2/command/PlayerActionCommand.java` และคลาสที่ Implement
+   - **บรรทัดที่:** (ตามโครงสร้างแพ็กเกจ command/)
    - **เหตุผล:** ระบบใช้ Command Pattern ทำให้สามารถเพิ่ม Action ใหม่ๆ เข้ามาได้ (เปิดรับการขยาย - Open for extension) โดยการสร้างคลาสใหม่ที่ Implement PlayerActionCommand โดยที่ไม่ต้องไปตามแก้โค้ดหลักเดิม (ปิดการแก้ไข - Closed for modification)
    - **ตัวอย่างโค้ด:**
 ```java
@@ -29,9 +29,14 @@ public interface PlayerActionCommand {
     ActionType getRecordedAction();
 }
 
-public class ProduceCommand implements PlayerActionCommand {
+public class ProduceFoodCommand implements PlayerActionCommand {
     private final CityService cityService;
     private final Long playerId;
+    
+    public ProduceFoodCommand(CityService cityService, Long playerId) {
+        this.cityService = cityService;
+        this.playerId = playerId;
+    }
     
     @Override
     public void execute() {
@@ -40,7 +45,7 @@ public class ProduceCommand implements PlayerActionCommand {
     
     @Override
     public ActionType getRecordedAction() {
-        return ActionType.PRODUCE;
+        return ActionType.PRODUCE_FOOD;
     }
 }
 ```
