@@ -43,6 +43,7 @@ docker-compose up --build
 ## API Documentation
 เมื่อรันโปรเจกต์ สามารถเข้าดู Swagger UI ได้ที่:
 http://localhost:8080/swagger-ui.html
+https://eternalclash2.onrender.com/swagger-ui/index.html
 
 ## How to Run Tests
 ```bash
