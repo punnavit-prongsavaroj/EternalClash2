@@ -131,7 +131,9 @@ erDiagram
 | ความสัมพันธ์ | ประเภท | คำอธิบาย |
 |---|---|---|
 | `games` → `players` | **One-to-Many** | 1 เกมมีหลายผู้เล่น |
+| `players` ↔ `player_stats` | **One-to-One** | 1 ผู้เล่นมี 1 สถิติ (แยกเพื่อลดภาระ Query) |
 | `players` → `cities` | **One-to-Many** | 1 ผู้เล่นเป็นเจ้าของได้หลายเมือง (NULL = เมืองร้าง) |
+| `cities` ↔ `cities` | **Many-to-Many** | เมืองเชื่อมต่อกันไปมาได้หลายทาง (ทำผ่านตารางกลาง `map_edges`) |
 | `players` → `armies` | **One-to-Many** | 1 ผู้เล่นส่งได้หลายกองทัพ |
 | `players` → `marshal_candidates` | **One-to-Many** | 1 ผู้เล่นได้รับ 3 ตัวเลือกจอมพล |
 | `marshals` → `players` | **One-to-Many** | 1 จอมพลถูกเลือกโดยหลายผู้เล่น (คนละเกม) |
@@ -349,9 +351,10 @@ erDiagram
 
 | เกณฑ์ | ผลลัพธ์ |
 |---|---|
-| จำนวนตาราง | **9 ตาราง** (เกณฑ์ ≥ 6 ✅) |
-| One-to-One | `players` ↔ `cities` ✅ |
-| One-to-Many | `games` → `players`, `players` → `armies`, `players` → `marshal_candidates`, etc. ✅ |
+| จำนวนตาราง | **10 ตาราง** (เกณฑ์ ≥ 6 ✅) |
+| One-to-One | `players` ↔ `player_stats` ✅ |
+| One-to-Many | `games` → `players`, `players` → `cities`, `players` → `armies`, etc. ✅ |
+| Many-to-Many| `cities` ↔ `cities` (ผ่านตารางกลาง `map_edges`) ✅ |
 | Foreign Key | ทุกตารางมี FK Constraint ✅ |
 | Index | มี Index บน FK และ Query ที่ใช้บ่อย ✅ |
 
