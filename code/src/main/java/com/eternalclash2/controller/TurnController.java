@@ -26,7 +26,7 @@ public class TurnController {
     public ResponseEntity<TurnActionDto> submitAction(@PathVariable Long gameId, @PathVariable Long playerId,
                                                       @Valid @RequestBody TurnActionRequest request) {
         return new ResponseEntity<>(TurnActionDto.from(turnActionService.performAction(gameId, playerId,
-                request.actionType(), request.targetPlayerId(), request.soldierCount())), HttpStatus.CREATED);
+                request.cityId(), request.actionType(), request.targetCityId(), request.soldierCount())), HttpStatus.CREATED);
     }
 
     @GetMapping("/actions")

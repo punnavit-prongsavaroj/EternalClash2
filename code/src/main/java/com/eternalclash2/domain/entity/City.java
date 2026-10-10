@@ -16,20 +16,34 @@ public class City {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "player_id", nullable = false, unique = true)
+    // A game has many cities (nodes)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "game_id")
+    private Game game;
+
+    // A player can own many cities. If null, it's a neutral city.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "player_id")
     private Player player;
 
     @Column(nullable = false, length = 50)
-    private String name;
+    private String name; // E.g., "City-1" or player's name if captured
 
     @Column(nullable = false)
     @Builder.Default
-    private Integer food = 50;
+    private Integer food = 0; // Neutral cities start with 0 food
 
     @Column(nullable = false)
     @Builder.Default
-    private Integer soldiers = 0;
+    private Integer soldiers = 30; // Neutral cities start with 30 soldiers
+
+    @Column
+    private Double x;
+
+    @Column
+    private Double y;
+    
+    @Column
+    @Builder.Default
+    private Boolean actionUsedThisTurn = false;
 }
-
-

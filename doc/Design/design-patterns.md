@@ -27,6 +27,8 @@ classDiagram
     }
     class Player {
         +String name
+    }
+    class City {
         +Integer food
         +Integer soldiers
     }
@@ -57,11 +59,11 @@ classDiagram
         +execute()
     }
     class ProduceFoodCommand {
-        -Player player
+        -City city
         +execute()
     }
     class RecruitCommand {
-        -Player player
+        -City city
         +execute()
     }
     class SendArmyCommand {

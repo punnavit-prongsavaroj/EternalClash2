@@ -6,18 +6,18 @@ import com.eternalclash2.service.CityService;
 
 public class ProduceFoodCommand implements PlayerActionCommand {
     private final CityService cityService;
-    private final Long playerId;
+    private final Long cityId;
     private final int turn;
 
-    public ProduceFoodCommand(CityService cityService, Long playerId, int turn) {
+    public ProduceFoodCommand(CityService cityService, Long cityId, int turn) {
         this.cityService = cityService;
-        this.playerId = playerId;
+        this.cityId = cityId;
         this.turn = turn;
     }
 
     @Override
     public void execute() {
-        cityService.produceFood(playerId, turn);
+        cityService.produceFood(cityId, turn);
     }
 
     @Override

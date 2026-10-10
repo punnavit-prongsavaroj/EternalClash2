@@ -18,6 +18,13 @@ public class PlayerService {
     public Player findById(Long id) { return getPlayer(id); }
 
     @Transactional(readOnly = true)
+    public Player getAlivePlayerValidated(Long id) {
+        Player player = getPlayer(id);
+        if (!Boolean.TRUE.equals(player.getIsAlive())) throw new com.eternalclash2.exception.BusinessLogicException("Eliminated players cannot take actions");
+        return player;
+    }
+
+    @Transactional(readOnly = true)
     public List<Player> findByGame(Long gameId) { return playerRepository.findByGame_IdOrderById(gameId); }
 
     @Transactional(readOnly = true)

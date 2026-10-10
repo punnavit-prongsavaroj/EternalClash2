@@ -45,7 +45,7 @@ body, html {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('../Menu/menuBG.jpg'); /* อัปเดตให้ตรงกับไฟล์ที่มี */
+    background-image: url('/Menu/menuBG.jpg'); /* อัปเดตให้ตรงกับไฟล์ที่มี */
     background-size: cover;
     background-position: center;
     z-index: -1;
@@ -435,3 +435,78 @@ button:hover {
     box-shadow: 0 0 10px #ecf0f1;
 }
 
+
+/* =========================================
+   Responsive Design & Mobile Adjustments
+   ========================================= */
+
+/* Portrait Lock Animation & Trigger */
+@keyframes rotatePhone {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(-90deg); }
+    100% { transform: rotate(0deg); }
+}
+
+@media screen and (orientation: portrait) {
+    #portrait-lock {
+        display: flex !important;
+    }
+    #game-screen, #lobby-screen, #room-screen {
+        display: none !important;
+    }
+}
+
+/* Landscape Phones & iPads (Max height 600px or Max width 1024px) */
+@media screen and (max-height: 600px), screen and (max-width: 1024px) {
+    /* Scale down the manual panel */
+    #manual-panel h3 { font-size: 1.2rem !important; }
+    #manual-panel button { font-size: 2.5rem !important; }
+    #manual-panel .action-btn { font-size: 0.9rem !important; padding: 5px 10px !important; }
+    
+    /* Scale down the command panel */
+    #command-panel {
+        transform: translate(-50%, -50%) scale(0.8) !important;
+    }
+    
+    /* Scale down draft cards */
+    #marshal-single-card {
+        transform: scale(0.7);
+        transform-origin: top center;
+        margin-bottom: -150px !important;
+    }
+    #draft-buttons-wrapper {
+        margin-top: -30px !important;
+    }
+
+    /* Shrink HUD elements */
+    #turn-display { font-size: 1.5rem !important; padding: 5px 15px !important; top: 10px !important; }
+    #season-display { font-size: 1.2rem !important; padding: 5px 15px !important; top: 50px !important; }
+    
+    .player-name-display { font-size: 1rem !important; top: 10px !important; left: 10px !important; }
+    .resource-display { font-size: 1rem !important; top: 40px !important; left: 10px !important; }
+    
+    /* Shrink Logs */
+    #log-panel {
+        width: 300px !important;
+        max-height: 250px !important;
+        bottom: 50px !important;
+        right: 10px !important;
+        padding: 10px !important;
+    }
+    #log-panel h3 { font-size: 1.1rem !important; margin-bottom: 5px !important; }
+    #log-content { font-size: 0.85rem !important; }
+    
+    /* Global buttons */
+    .action-btn {
+        padding: 8px 12px !important;
+        font-size: 0.9rem !important;
+    }
+}
+
+/* Very Small Mobile Height */
+@media screen and (max-height: 400px) {
+    #command-panel { transform: translate(-50%, -50%) scale(0.65) !important; }
+    #log-panel { max-height: 150px !important; width: 250px !important; }
+    #marshal-single-card { transform: scale(0.5); margin-bottom: -250px !important; }
+}
+@keyframes fadeInOut { 0% { opacity: 0; } 40% { opacity: 1; } 60% { opacity: 1; } 100% { opacity: 0; } }

@@ -17,6 +17,9 @@ public interface GameRepository extends JpaRepository<Game, Long> {
     Optional<Game> findByIdForUpdate(@Param("id") Long id);
 
     Optional<Game> findByRoomCode(String roomCode);
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"players"})
+    org.springframework.data.domain.Page<Game> findAll(org.springframework.data.domain.Pageable pageable);
 }
 
 
