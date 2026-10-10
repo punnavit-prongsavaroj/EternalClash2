@@ -179,7 +179,7 @@ export default function App() {
         <CloudTransition onMiddle={transitionTask.callback} />
       )}
       <audio ref={bgMusicRef} src="/sound/menu_bgm.mp3" loop />
-      <button onClick={toggleMusic} style={{position:'fixed', top:'20px', right:'20px', zIndex:1000, background:'rgba(0,0,0,0.7)', color:'white', border:'2px solid #f39c12', width:'50px', height:'50px', borderRadius:'50%', cursor:'pointer', fontSize:'1.5rem', display:'flex', justifyContent:'center', alignItems:'center', boxShadow:'0 4px 10px rgba(0,0,0,0.5)'}}>
+      <button onClick={toggleMusic} style={{position:'fixed', bottom:'120px', left:'20px', zIndex:1000, background:'rgba(0,0,0,0.7)', color:'white', border:'2px solid #f39c12', width:'50px', height:'50px', borderRadius:'50%', cursor:'pointer', fontSize:'1.5rem', display:'flex', justifyContent:'center', alignItems:'center', boxShadow:'0 4px 10px rgba(0,0,0,0.5)'}}>
         {isMusicPlaying ? '🔊' : '🔇'}
       </button>
       {renderScreen()}
