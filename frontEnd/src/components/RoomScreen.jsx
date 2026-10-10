@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { fetchPlayers, startGame } from '../api'
+import ManualModal from './ManualModal'
 
 export default function RoomScreen({ gameId, playerId, gameState, onLeave }) {
     const [players, setPlayers] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [showManual, setShowManual] = useState(false);
 
     useEffect(() => {
         if (!gameId) return;
@@ -41,6 +43,10 @@ export default function RoomScreen({ gameId, playerId, gameState, onLeave }) {
                     <p style={{color:'#2ecc71', fontSize:'1.2rem', fontWeight:'bold', marginTop:'20px'}}>กำลังรอหัวหน้าห้องเริ่มเกม...</p>
                 )}
             </div>
+
+            <button className="action-btn" style={{position:'absolute', bottom:'20px', right:'20px', zIndex:15, background:'#2980b9', padding:'10px 20px', fontSize:'1.1rem', width:'auto', boxShadow:'0 5px 15px rgba(0,0,0,0.5)'}} onClick={() => setShowManual(v => !v)}>📖 คู่มือการเล่น</button>
+            
+            {showManual && <ManualModal onClose={() => setShowManual(false)} />}
         </div>
     );
 }
