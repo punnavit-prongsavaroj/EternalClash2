@@ -6,7 +6,7 @@ import DraftScreen from './components/DraftScreen'
 import GameScreen from './components/GameScreen'
 import GameOverScreen from './components/GameOverScreen'
 import CloudTransition from './components/CloudTransition'
-import { fetchGameSnapshot, fetchPlayers } from './api'
+import { fetchGameSnapshot, fetchPlayers, wakeUpBackend } from './api'
 import './index.css'
 
 export default function App() {
@@ -22,9 +22,24 @@ export default function App() {
   const [transitionTask, setTransitionTask] = useState(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(true);
   const [isPortrait, setIsPortrait] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState('connecting'); // connecting | connected | hidden
   const bgMusicRef = useRef(null);
   const lastStatusRef = useRef('');
   const lastTurnRef = useRef(-1);
+
+  // Wake up backend
+  useEffect(() => {
+    const wakeUp = async () => {
+      try {
+        await wakeUpBackend();
+      } catch (e) {}
+      setConnectionStatus('connected');
+      // หน่วงเวลาให้ผู้เล่นอ่านคำว่า "เชื่อมต่อสำเร็จ" 1.5 วินาที
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setConnectionStatus('hidden');
+    };
+    wakeUp();
+  }, []);
 
   // Portrait lock
   useEffect(() => {
@@ -173,6 +188,26 @@ export default function App() {
           <div style={{fontSize:'5rem', marginBottom:'20px'}}>🔄</div>
           <h1 style={{color:'#f39c12', marginBottom:'10px'}}>กรุณาหมุนจอเป็นแนวนอน</h1>
           <p style={{fontSize:'1.2rem'}}>เกมนี้ออกแบบมาเพื่อเล่นในแนวนอนเท่านั้น (Landscape)</p>
+        </div>
+      )}
+      {connectionStatus !== 'hidden' && (
+        <div style={{display:'flex', position:'fixed', top:0, left:0, width:'100vw', height:'100vh', background:'#2c3e50', zIndex:9998, flexDirection:'column', alignItems:'center', justifyContent:'center', color:'white', textAlign:'center', padding:'20px'}}>
+          {connectionStatus === 'connecting' ? (
+            <>
+              <div style={{fontSize:'4rem', marginBottom:'20px', animation: 'spin 2s linear infinite'}}>⏳</div>
+              <h1 style={{color:'#f39c12', marginBottom:'10px'}}>กำลังเชื่อมต่อเซิร์ฟเวอร์...</h1>
+              <p style={{fontSize:'1.2rem', color:'#bdc3c7'}}>หากเซิร์ฟเวอร์หลับ อาจใช้เวลา 30-50 วินาทีในการตื่นครั้งแรก</p>
+            </>
+          ) : (
+            <>
+              <div style={{fontSize:'4rem', marginBottom:'20px'}}>✅</div>
+              <h1 style={{color:'#2ecc71', marginBottom:'10px'}}>เชื่อมต่อสำเร็จ!</h1>
+              <p style={{fontSize:'1.2rem', color:'#bdc3c7'}}>กำลังเข้าสู่ระบบเกม...</p>
+            </>
+          )}
+          <style>
+            {`@keyframes spin { 100% { transform: rotate(360deg); } }`}
+          </style>
         </div>
       )}
       {transitionTask && (
