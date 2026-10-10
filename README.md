@@ -14,8 +14,8 @@
 - **Backend**: Java 17, Spring Boot 3.2.4
 - **Database**: PostgreSQL (Supabase Cloud DB)
 - **ORM**: Spring Data JPA (Hibernate)
-- **Frontend**: Vanilla HTML/CSS/JS (served via Spring Boot static)
-- **Deployment**: Render, Docker
+- **Frontend**: React.js, Vite
+- **Deployment**: Render (Backend), Vercel (Frontend), Docker
 
 ## System Architecture
 Layered Architecture (Controller -> Service -> Repository -> Database) 
@@ -28,31 +28,35 @@ Layered Architecture (Controller -> Service -> Repository -> Database)
 ## Installation & Setup
 1. Clone repository
 2. ตั้งค่า Database credentials ใน code/src/main/resources/application.properties (ปัจจุบันชี้ไปที่ Supabase Cloud แล้ว สามารถรันได้เลย)
+3. สำหรับฝั่ง Frontend ให้เปิดเข้าโฟลเดอร์ `frontEnd/` แล้วรัน `npm install` ตามด้วย `npm run dev`
 
 ## How to Run
-`ash
+```bash
 cd code
 ./mvnw clean spring-boot:run
-`
+```
 หรือรันผ่าน Docker:
-`ash
+```bash
 docker-compose up --build
-`
+```
 
 ## API Documentation
 เมื่อรันโปรเจกต์ สามารถเข้าดู Swagger UI ได้ที่:
 http://localhost:8080/swagger-ui.html
 
 ## How to Run Tests
-`ash
+```bash
 cd code
 ./mvnw test
-`
+```
 
 ## Deployment URL
-eternal-clash2.vercel.app
+- **Frontend (หน้าเว็บที่ใช้เล่น):** [https://eternal-clash2.vercel.app](https://eternal-clash2.vercel.app)
+- **Backend (API):** [https://eternalclash2.onrender.com](https://eternalclash2.onrender.com)
+
 ## Project Structure
-- code/: Source code และ Configuration (Spring Boot)
-- code/src/test/: ไฟล์ Unit Testing
-- doc/: เอกสารทั้งหมด (Diagrams, SOLID, Design Patterns, Data Dictionary)
-- img/: ไฟล์รูปภาพ
+- `code/`: Source code และ Configuration (Spring Boot Backend)
+- `frontEnd/`: Source code สำหรับฝั่งหน้าเว็บ (React/Vite)
+- `code/src/test/`: ไฟล์ Unit Testing
+- `doc/`: เอกสารทั้งหมด (Diagrams, SOLID, Design Patterns, Data Dictionary)
+- `img/`: ไฟล์รูปภาพ
