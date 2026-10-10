@@ -50,8 +50,7 @@ cd code
 `
 
 ## Deployment URL
-[[https://eternalclash2.onrender.com](https://eternalclash2.onrender.com)](https://eternal-clash2.vercel.app/)
-
+[[eternal-clash2.vercel.app](eternal-clash2.vercel.app)]
 ## Project Structure
 - code/: Source code และ Configuration (Spring Boot)
 - code/src/test/: ไฟล์ Unit Testing
