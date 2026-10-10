@@ -20,6 +20,8 @@ public interface GameRepository extends JpaRepository<Game, Long> {
 
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"players"})
     org.springframework.data.domain.Page<Game> findAll(org.springframework.data.domain.Pageable pageable);
+
+    java.util.List<Game> findByUpdatedAtBefore(java.time.LocalDateTime date);
 }
 
 
